@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* TODO(port): replace with the palette and type from movie-league-v2.jsx */
+body {
+  background: radial-gradient(ellipse at top, #1c1917 0%, #09090b 60%) fixed;
+  color: #f4f4f5;
+}
