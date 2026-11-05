@@ -42,13 +42,20 @@ export function matchTier(query: string, title: string): number {
   return 0;
 }
 
-/** Text accuracy dominates; within the same tier, the better-known film wins. */
+/**
+ * Text accuracy dominates; within the same tier, closeness (how much of the title you've
+ * typed) and then fame decide. Closeness puts "Home Alone" ahead of "Home Alone 2: Lost in
+ * New York" for "home alo" even when the sequel happens to be trending.
+ */
 export function searchScore(query: string, m: RankableMovie): number {
   const tier = Math.max(matchTier(query, m.title), m.original_title ? matchTier(query, m.original_title) - 1 : 0);
+  const q = normalizeTitle(query);
+  const t = normalizeTitle(m.title);
+  const closeness = tier >= 3 && t.length > 0 ? Math.min(1, q.length / t.length) : 0;
   const fame = Math.log10(1 + m.vote_count) + 0.5 * Math.log10(1 + m.popularity);
   // A tier is worth ~1.5 orders of magnitude of votes: a famous film one tier lower can still
   // beat an obscure exact match (e.g. "godfather" → The Godfather over an unknown "Godfather").
-  return tier * 1.5 + fame;
+  return tier * 1.5 + closeness * 1.2 + fame;
 }
 
 export function rankMovies<T extends RankableMovie>(query: string, movies: T[]): T[] {

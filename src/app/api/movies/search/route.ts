@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { rankMovies } from "@/lib/rank";
+import { matchTier, rankMovies } from "@/lib/rank";
 import type { Movie } from "@/lib/types";
 
 // Server-side proxy to TMDb so the API credential stays secret.
@@ -38,23 +38,33 @@ export async function GET(request: Request) {
   };
   // TMDb's first page can miss the obvious film for a half-typed title ("home alon"),
   // so pull the first 3 pages in parallel and rank them ourselves.
-  const fetchPage = async (page: number): Promise<TmdbResult[]> => {
-    const params = new URLSearchParams({ query: q, include_adult: "false", language: "en-US", page: String(page) });
+  const fetchPage = async (query: string, page: number): Promise<TmdbResult[]> => {
+    const params = new URLSearchParams({ query, include_adult: "false", language: "en-US", page: String(page) });
     if (!readToken && apiKey) params.set("api_key", apiKey);
     const res = await fetch(`${TMDB}/search/movie?${params}`, {
       headers: readToken ? { Authorization: `Bearer ${readToken}`, accept: "application/json" } : { accept: "application/json" },
     });
     if (!res.ok) {
-      if (page === 1) throw new Error(`TMDb error ${res.status}`);
+      if (page === 1 && query === q) throw new Error(`TMDb error ${res.status}`);
       return []; // later pages are a bonus
     }
     const body = (await res.json()) as { results: TmdbResult[]; total_pages: number };
     return body.results;
   };
 
+  // TMDb also drops films for some half-typed last words ("home al", "home alon" miss
+  // Home Alone 1990). So also search the complete words ("home") and keep only results whose
+  // titles still fit what was typed.
+  const words = q.split(/\s+/);
+  const completeWords = words.length >= 2 ? words.slice(0, -1).join(" ") : null;
+
   let pool: TmdbResult[];
   try {
-    pool = (await Promise.all([1, 2, 3].map(fetchPage))).flat();
+    const [main, extra] = await Promise.all([
+      Promise.all([1, 2, 3].map((p) => fetchPage(q, p))),
+      completeWords && completeWords.length >= 2 ? Promise.all([1, 2].map((p) => fetchPage(completeWords, p))) : Promise.resolve([]),
+    ]);
+    pool = [...main.flat(), ...extra.flat().filter((m) => matchTier(q, m.title) >= 3)];
   } catch (e) {
     return Response.json({ error: (e as Error).message }, { status: 502 });
   }
@@ -68,6 +78,8 @@ export async function GET(request: Request) {
       title: m.title,
       release_year: m.release_date ? Number(m.release_date.slice(0, 4)) || null : null,
       poster_path: m.poster_path,
+      vote_count: m.vote_count,
+      popularity: m.popularity,
     }));
   return Response.json({ results }, { headers: { "Cache-Control": "private, max-age=300" } });
 }

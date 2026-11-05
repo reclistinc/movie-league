@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import type { LeagueState, Movie, Round, VotingPick } from "@/lib/types";
 import { BackdropCard, TrailerButton, useMovieDetails } from "./media";
 import { RoundResults } from "./Results";
+import { matchTier, rankMovies } from "@/lib/rank";
 import { GifPicker, PickGif } from "./GifPicker";
 import { ErrorText, Poster, timeLeft } from "./ui";
 
@@ -122,7 +123,20 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
       setSearching(true);
       api
         .searchMovies(query)
-        .then((r) => live && setResults(r), (e) => live && setError(e.message))
+        .then(
+          (r) => {
+            if (!live) return;
+            // Keep earlier results that still fit what's typed, so a good match found one
+            // keystroke ago doesn't vanish when TMDb's matching wobbles.
+            setResults((prev) => {
+              const ids = new Set(r.map((m) => m.tmdb_id));
+              const carried = prev.filter((m) => !ids.has(m.tmdb_id) && matchTier(query, m.title) >= 3);
+              const rankable = (m: Movie) => ({ ...m, vote_count: m.vote_count ?? 0, popularity: m.popularity ?? 0 });
+              return rankMovies(query, [...r, ...carried].map(rankable)).slice(0, 12);
+            });
+          },
+          (e) => live && setError(e.message),
+        )
         .finally(() => live && setSearching(false));
     }, 300);
     return () => {

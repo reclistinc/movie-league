@@ -40,6 +40,8 @@ export interface Movie {
   title: string;
   release_year: number | null;
   poster_path: string | null;
+  vote_count?: number; // search results only, for re-ranking in the browser
+  popularity?: number;
 }
 
 export interface MySubmission extends Movie {
