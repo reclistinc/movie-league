@@ -49,6 +49,11 @@ export function League({ leagueId }: { leagueId: string }) {
     };
   }, [leagueId, refresh]);
 
+  // Each screen change (tabs, opening a past round, going back) starts at the top.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [page, viewingRound]);
+
   if (error && !state) return <ErrorText error={error} />;
   if (!state) return <p style={{ color: "var(--reel-grey)" }}>Loading league…</p>;
   if (state.league.status === "setup") return <Setup state={state} onChange={refresh} />;
