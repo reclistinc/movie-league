@@ -32,8 +32,10 @@ Rules implemented:
    (Or with the CLI: `supabase link` then `supabase db push`.)
 3. **Authentication → URL Configuration:** set *Site URL* to your Vercel URL and add
    `http://localhost:3000/**` and `https://YOUR-APP.vercel.app/**` to *Redirect URLs*.
-4. *(Recommended for phones)* **Authentication → Emails → Magic Link** template: add
-   `Your code: {{ .Token }}` so players can type the code if the link opens in a different browser.
+4. **Email (required for real players):** Supabase's built-in sender only emails project team members, 2/hour.
+   - **Authentication → Emails → SMTP Settings:** enable custom SMTP (e.g. Gmail: `smtp.gmail.com`, port 465, an app password), sender name `Movie League`. Then raise **Authentication → Rate Limits → emails**.
+   - **Templates *Confirm signup* and *Magic Link*:** the sign-in link must point at the site, not Supabase:
+     `<a href="{{ .SiteURL }}/?token_hash={{ .TokenHash }}&type=email">Sign in</a>` and optionally `{{ .Token }}` for the 6-digit code.
 5. *(Optional)* To advance phases on deadlines even when nobody opens the app, enable the
    `pg_cron` extension and run:
    ```sql

@@ -18,6 +18,10 @@ export function Login({ inviteCode }: { inviteCode: string | null }) {
     e.preventDefault();
     setBusy(true);
     setError(null);
+    // Remember where to return (e.g. an invite) — the emailed link goes to the site root.
+    try {
+      localStorage.setItem("ml_return", window.location.search);
+    } catch {}
     const { error } = await supabase().auth.signInWithOtp({
       email: email.trim(),
       options: { emailRedirectTo: window.location.href },
