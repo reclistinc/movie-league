@@ -59,11 +59,21 @@ npm run dev
 ### 4. Deploy on Vercel
 Import `reclistinc/movie-league` at [vercel.com/new](https://vercel.com/new), add the same env vars from `.env.example`, and deploy.
 
+## Solo testing: demo league with pretend players
+`supabase/demo/demo_league.sql` adds helper functions (SQL Editor only, never callable from the app):
+```sql
+select public.demo_create_league('you@example.com'); -- 4 pretend players, 2 finished rounds, 1 in voting, chat
+select public.demo_bots_act();                         -- pretend players submit / vote / chat for the live round
+select public.demo_cleanup();                          -- remove the demo league and pretend players
+```
+
 ## Tests
 The database test runs the whole game loop (setup → join → submit → vote → reveal → deadlines → season end) and the security rules against a throwaway Postgres database:
 ```bash
-PGHOST=localhost PGUSER=postgres npm run test:db
+PGHOST=localhost PGUSER=postgres npm run test:db   # game loop + security
+npm run test:rank                                  # search ranking
 ```
+`supabase/tests/demo.sql` exercises the demo helpers.
 
 ## Status / next steps
 - [x] Persistent backend and game loop, tested

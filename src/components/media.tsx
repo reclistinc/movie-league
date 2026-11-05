@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { FastForward, Play, RotateCcw, RotateCw, Volume2, X } from "lucide-react";
 import type { MovieDetails, MovieVideo, TrendingMovie } from "@/lib/types";
-import { POSTER_BASE } from "./ui";
+import { POSTER_BASE } from "@/lib/images";
 
 // ---------------------------------------------------------------------------
 // Movie details (backdrop, genres, trailers), fetched once per movie and shared

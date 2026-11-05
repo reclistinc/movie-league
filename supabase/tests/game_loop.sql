@@ -2,7 +2,7 @@
 \set ON_ERROR_STOP on
 \set QUIET on
 
-insert into auth.users values
+insert into auth.users (id) values
   ('00000000-0000-0000-0000-00000000000a'),  -- Ana (commissioner)
   ('00000000-0000-0000-0000-00000000000b'),  -- Ben
   ('00000000-0000-0000-0000-00000000000c'),  -- Cy

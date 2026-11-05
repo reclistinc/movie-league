@@ -5,7 +5,9 @@ import { Check, Copy, Share2, Ticket } from "lucide-react";
 import { AVATAR_MAP, AVATAR_OPTIONS, CharacterFace, GeneratedPoster } from "./art";
 import type { Member, Movie } from "@/lib/types";
 
-export const POSTER_BASE = "https://image.tmdb.org/t/p/";
+import { POSTER_BASE } from "@/lib/images";
+import { useMovieDetails } from "./media";
+export { POSTER_BASE };
 
 // ---------------------------------------------------------------------------
 // Avatars (the prototype's drawn characters)
@@ -73,12 +75,15 @@ export function Poster({
   width = 80,
   genre,
 }: {
-  movie: Pick<Movie, "title" | "poster_path"> & { release_year?: number | null };
+  movie: Pick<Movie, "title" | "poster_path"> & { release_year?: number | null; tmdb_id?: number };
   width?: number;
   genre?: string;
 }) {
+  // Picks saved without a poster (e.g. the demo league) borrow it from TMDb details by id.
+  const details = useMovieDetails(movie.poster_path ? null : movie.tmdb_id);
+  const path = movie.poster_path ?? details?.poster_path ?? null;
   const h = Math.round(width * 1.4);
-  if (!movie.poster_path) {
+  if (!path) {
     return (
       <div className="shrink-0" style={{ width, height: h }}>
         <GeneratedPoster genre={genre} title={movie.title} year={movie.release_year} size={width < 60 ? "small" : "normal"} />
@@ -88,7 +93,7 @@ export function Poster({
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={`${POSTER_BASE}${width > 150 ? "w342" : "w185"}${movie.poster_path}`}
+      src={`${POSTER_BASE}${width > 150 ? "w342" : "w185"}${path}`}
       alt={`${movie.title} poster`}
       className="shrink-0 rounded-md object-cover shadow-lg shadow-black/40"
       style={{ width, height: h, border: "1px solid rgba(255,255,255,0.12)" }}
