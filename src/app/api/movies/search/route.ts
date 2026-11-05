@@ -33,7 +33,7 @@ export async function GET(request: Request) {
   if (!res.ok) return Response.json({ error: `TMDb error ${res.status}` }, { status: 502 });
 
   const body = (await res.json()) as {
-    results: { id: number; title: string; original_title?: string; release_date?: string; poster_path: string | null; popularity: number; vote_count: number }[];
+    results: { id: number; title: string; adult?: boolean; original_title?: string; release_date?: string; poster_path: string | null; popularity: number; vote_count: number }[];
   };
   // TMDb's own order is loose (e.g. "Home Alone" lands ~7th). Rank the well-known films first:
   // vote count is the best "everyone knows this one" signal, boosted when the title matches.
@@ -43,7 +43,9 @@ export async function GET(request: Request) {
     const boost = t === needle ? 3 : t.startsWith(needle) ? 1.5 : 1;
     return (m.vote_count + m.popularity) * boost;
   };
-  const results: Movie[] = [...body.results].sort((a, b) => score(b) - score(a)).slice(0, 12).map((m) => ({
+  const results: Movie[] = body.results
+    .filter((m) => m.adult !== true) // never show adult titles, even if TMDb returns one
+    .sort((a, b) => score(b) - score(a)).slice(0, 12).map((m) => ({
     tmdb_id: m.id,
     title: m.title,
     release_year: m.release_date ? Number(m.release_date.slice(0, 4)) || null : null,
