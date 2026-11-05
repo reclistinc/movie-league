@@ -28,7 +28,7 @@ Rules implemented:
 
 ### 1. Supabase
 1. Create a project at [supabase.com](https://supabase.com) (free tier).
-2. **SQL Editor →** paste and run `supabase/migrations/20261105000000_init.sql`.
+2. **SQL Editor →** paste and run each file in `supabase/migrations/`, oldest first (`…_init.sql`, then `…_pick_gif.sql`).
    (Or with the CLI: `supabase link` then `supabase db push`.)
 3. **Authentication → URL Configuration:** set *Site URL* to your Vercel URL and add
    `http://localhost:3000/**` and `https://YOUR-APP.vercel.app/**` to *Redirect URLs*.
@@ -45,6 +45,9 @@ Rules implemented:
 
 ### 2. TMDb
 Create a free account → Settings → API → request a key. Copy the **API Read Access Token** (preferred) or the v3 API key.
+
+### 2b. GIPHY (optional)
+Create an app at [developers.giphy.com](https://developers.giphy.com) and set `GIPHY_API_KEY` to enable optional GIFs on picks. Without it the feature is hidden.
 
 ### 3. Run locally
 ```bash

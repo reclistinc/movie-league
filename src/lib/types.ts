@@ -46,11 +46,13 @@ export interface MySubmission extends Movie {
   id: string;
   round_id: string;
   note: string | null;
+  gif_url: string | null;
 }
 
 export interface VotingPick extends Movie {
   id: string;
   note: string | null;
+  gif_url?: string | null;
   is_mine: boolean;
 }
 
@@ -75,6 +77,7 @@ export interface ResultPick extends Movie {
   id: string;
   user_id: string;
   note: string | null;
+  gif_url?: string | null;
   points: number;
   votes: { voter_id: string; points: number; comment: string | null }[];
 }
@@ -148,4 +151,12 @@ export interface MovieDetails {
   poster_path: string | null;
   genres: string[];
   videos: MovieVideo[];
+}
+
+export interface Gif {
+  id: string;
+  title: string;
+  url: string;
+  width: number;
+  height: number;
 }

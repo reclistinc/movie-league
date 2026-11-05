@@ -61,7 +61,7 @@ export function App() {
 
   return (
     <>
-      <PosterWall intensity={session ? 0.14 : 0.32} />
+      <PosterWall intensity={session ? 0.45 : 0.7} />
       <main className="relative z-10 mx-auto w-full max-w-[720px] px-4 pt-4 pb-16">
         <header className="mb-4 flex items-center justify-between">
           <Link href="/" className="display flex items-center gap-2 text-xl" style={{ color: "var(--screen-white)" }}>

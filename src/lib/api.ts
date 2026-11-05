@@ -3,6 +3,7 @@
 import { supabase } from "./supabase";
 import type {
   ChatMessage,
+  Gif,
   InvitePreview,
   LeagueState,
   LeagueSummary,
@@ -54,7 +55,7 @@ export const api = {
   updateMe: (leagueId: string, displayName: string, avatar: string) =>
     rpc<void>("update_my_member", { p_league_id: leagueId, p_display_name: displayName, p_avatar: avatar }),
 
-  submitPick: (roundId: string, movie: Movie, note?: string) =>
+  submitPick: (roundId: string, movie: Movie, note?: string, gifUrl?: string | null) =>
     rpc<void>("submit_pick", {
       p_round_id: roundId,
       p_tmdb_id: movie.tmdb_id,
@@ -62,6 +63,8 @@ export const api = {
       p_release_year: movie.release_year,
       p_poster_path: movie.poster_path,
       p_note: note ?? null,
+      // Only sent when a GIF is chosen, so picks keep working before the GIF migration is applied.
+      ...(gifUrl ? { p_gif_url: gifUrl } : {}),
     }),
   castVotes: (roundId: string, votes: VoteInput[]) => rpc<void>("cast_votes", { p_round_id: roundId, p_votes: votes }),
 
@@ -78,6 +81,16 @@ export const api = {
   sendChat: async (leagueId: string, body: string) => {
     const { error } = await supabase().from("chat_messages").insert({ league_id: leagueId, body });
     if (error) throw new Error(error.message);
+  },
+
+  /** GIPHY search via our server route; enabled=false means no key is configured. */
+  searchGifs: async (query: string): Promise<{ enabled: boolean; results: Gif[] }> => {
+    const { data } = await supabase().auth.getSession();
+    const res = await fetch(`/api/gifs?q=${encodeURIComponent(query)}`, {
+      headers: { Authorization: `Bearer ${data.session?.access_token ?? ""}` },
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "GIF search failed");
+    return res.json();
   },
 
   /** Movie search goes through our server route so the TMDb key never reaches the browser. */

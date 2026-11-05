@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import { Play, X } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { FastForward, Play, RotateCcw, RotateCw, X } from "lucide-react";
 import type { MovieDetails, MovieVideo, TrendingMovie } from "@/lib/types";
 import { POSTER_BASE } from "./ui";
 
@@ -88,37 +89,81 @@ export function TrailerButton({ tmdbId, title, compact = false }: { tmdbId: numb
 
 function TrailerModal({ title, videos, onClose }: { title: string; videos: MovieVideo[]; onClose: () => void }) {
   const [current, setCurrent] = useState(videos[0]);
+  const frame = useRef<HTMLIFrameElement>(null);
+  const time = useRef(0);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    // The YouTube player reports its position once we say we're listening.
+    const onMessage = (e: MessageEvent) => {
+      if (!/youtube(-nocookie)?\.com$/.test(new URL(e.origin).hostname)) return;
+      try {
+        const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+        if (typeof data?.info?.currentTime === "number") time.current = data.info.currentTime;
+      } catch {}
+    };
     window.addEventListener("keydown", onKey);
+    window.addEventListener("message", onMessage);
     document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
+      window.removeEventListener("message", onMessage);
       document.body.style.overflow = "";
     };
   }, [onClose]);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-3" onClick={onClose}>
+  const send = (msg: object) => frame.current?.contentWindow?.postMessage(JSON.stringify(msg), "*");
+  const skip = (seconds: number) => {
+    const to = Math.max(0, time.current + seconds);
+    time.current = to;
+    send({ event: "command", func: "seekTo", args: [to, true] });
+  };
+
+  // Rendered at the top of the page (portal) so no card can clip or squash the player.
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/90 p-3"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClose();
+      }}
+    >
       <div className="w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-2 flex items-center justify-between gap-3">
           <div className="display truncate text-2xl" style={{ color: "var(--marquee-gold)" }}>
             {title}
           </div>
-          <button onClick={onClose} className="btn-ghost p-1.5" aria-label="Close">
-            <X size={18} />
+          <button onClick={onClose} className="btn-primary flex items-center gap-1 px-3 py-1.5 text-sm" aria-label="Close trailer">
+            <X size={16} /> Close
           </button>
         </div>
-        <div className="aspect-video w-full overflow-hidden rounded-lg border border-white/10 bg-black">
+        <div className="relative w-full overflow-hidden rounded-lg border border-white/10 bg-black" style={{ aspectRatio: "16 / 9" }}>
           <iframe
+            ref={frame}
             key={current.key}
-            className="h-full w-full"
-            src={`https://www.youtube-nocookie.com/embed/${current.key}?autoplay=1&rel=0&playsinline=1`}
+            className="absolute inset-0 h-full w-full"
+            src={`https://www.youtube-nocookie.com/embed/${current.key}?autoplay=1&rel=0&playsinline=1&controls=1&fs=1&enablejsapi=1&origin=${encodeURIComponent(
+              typeof window === "undefined" ? "" : window.location.origin,
+            )}`}
             title={current.name}
             allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
             allowFullScreen
+            onLoad={() => {
+              time.current = 0;
+              send({ event: "listening", id: current.key, channel: "widget" });
+            }}
           />
+        </div>
+        <div className="mt-2 flex items-center justify-center gap-2">
+          <button onClick={() => skip(-10)} className="btn-ghost flex items-center gap-1 px-3 py-1.5 text-sm">
+            <RotateCcw size={14} /> 10s
+          </button>
+          <button onClick={() => skip(10)} className="btn-ghost flex items-center gap-1 px-3 py-1.5 text-sm">
+            10s <RotateCw size={14} />
+          </button>
+          <button onClick={() => skip(30)} className="btn-ghost flex items-center gap-1 px-3 py-1.5 text-sm">
+            30s <FastForward size={14} />
+          </button>
         </div>
         {videos.length > 1 && (
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
@@ -144,8 +189,12 @@ function TrailerModal({ title, videos, onClose }: { title: string; videos: Movie
             ))}
           </div>
         )}
+        <p className="mt-2 text-center text-[11px]" style={{ color: "var(--reel-grey)" }}>
+          Tap outside the video or press Close to go back.
+        </p>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

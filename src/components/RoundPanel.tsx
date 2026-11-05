@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import type { LeagueState, Movie, Round, VotingPick } from "@/lib/types";
 import { BackdropCard, TrailerButton, useMovieDetails } from "./media";
 import { RoundResults } from "./Results";
+import { GifPicker, PickGif } from "./GifPicker";
 import { ErrorText, Poster, timeLeft } from "./ui";
 
 export function RoundPanel({ state, onChange }: { state: LeagueState; onChange: () => void }) {
@@ -108,7 +109,8 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
   const [results, setResults] = useState<Movie[]>([]);
   const [searching, setSearching] = useState(false);
   const [chosen, setChosen] = useState<Movie | null>(null);
-  const [note, setNote] = useState(mine?.note ?? "");
+  const [gifUrl, setGifUrl] = useState<string | null>(null);
+  const [note, setNote] = useState(""); // starts empty; your saved pick + note stay untouched until you confirm
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const waitingOn = round.participant_ids.length - round.submitted_ids.length;
@@ -134,9 +136,11 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
     setBusy(true);
     setError(null);
     try {
-      await api.submitPick(round.id, chosen, note);
+      await api.submitPick(round.id, chosen, note, gifUrl);
       setEditing(false);
       setChosen(null);
+      setGifUrl(null);
+      setNote("");
       setQuery("");
       onChange();
     } catch (e) {
@@ -168,6 +172,7 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
                 {mine.release_year}
               </div>
               {mine.note && <p className="mt-2 text-sm italic">&ldquo;{mine.note}&rdquo;</p>}
+              <PickGif url={mine.gif_url} />
               <div className="mt-3 flex flex-wrap gap-2">
                 <TrailerButton tmdbId={mine.tmdb_id} title={mine.title} />
                 <button onClick={() => setEditing(true)} className="btn-ghost px-3 py-1.5 text-sm">
@@ -191,7 +196,16 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
     <div className="card space-y-4 p-5">
       {status}
       {chosen ? (
-        <ChosenPreview movie={chosen} onClear={() => setChosen(null)} />
+        <>
+          <ChosenPreview
+            movie={chosen}
+            onClear={() => {
+              setChosen(null);
+              setGifUrl(null);
+            }}
+          />
+          <GifPicker key={chosen.tmdb_id} movieTitle={chosen.title} value={gifUrl} onChange={setGifUrl} />
+        </>
       ) : (
         <>
           <input className="field" autoFocus placeholder="Search for your pick…" value={query} onChange={(e) => setQuery(e.target.value)} />
@@ -224,7 +238,7 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
           className="field resize-y"
           rows={2}
           maxLength={280}
-          placeholder="Say a word or two about why you picked this…"
+          placeholder={mine?.note ? `Currently: “${mine.note}” — leave blank to drop it` : "Say a word or two about why you picked this…"}
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
@@ -237,7 +251,15 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
           </button>
         )}
         {mine && (
-          <button onClick={() => setEditing(false)} className="btn-ghost px-5 py-2.5">
+          <button
+            onClick={() => {
+              setEditing(false);
+              setChosen(null);
+              setGifUrl(null);
+              setNote("");
+            }}
+            className="btn-ghost px-5 py-2.5"
+          >
             Cancel
           </button>
         )}
@@ -423,6 +445,7 @@ function PickTicket({ pick, children }: { pick: VotingPick; children: React.Reac
                 {pick.note}
               </div>
             )}
+            <PickGif url={pick.gif_url} />
             <div className="mt-2.5">{children}</div>
           </div>
         </div>

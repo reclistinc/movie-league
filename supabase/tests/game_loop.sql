@@ -81,7 +81,8 @@ select pg_temp.check((select count(*) = 0 from information_schema.table_privileg
 select pg_temp.check((public.get_league_state(:'lid')->'current'->'submissions') = 'null', 'picks hidden during submission phase');
 select pg_temp.check(jsonb_array_length(public.get_league_state(:'lid')->'rounds'->0->'submitted_ids') = 2, 'who-has-submitted is visible');
 
-select pg_temp.as_user('c');  select public.submit_pick(:'r1', 107, 'Snatch', 2000);
+select pg_temp.expect_error(format('select public.submit_pick(%L, 107, %L, 2000, null, null, %L)', :'r1', 'Snatch', 'https://evil.example/x.gif'), 'GIPHY');
+select pg_temp.as_user('c');  select public.submit_pick(:'r1', 107, 'Snatch', 2000, null, null, 'https://media1.giphy.com/media/abc/giphy.gif');
 select pg_temp.check((select status = 'voting' from public.rounds where id = :'r1'), 'auto-advance to voting once all submitted');
 select pg_temp.as_user('a');
 select pg_temp.expect_error(format('select public.submit_pick(%L, 5, %L)', :'r1', 'X'), 'closed');
@@ -90,6 +91,7 @@ select pg_temp.expect_error(format('select public.submit_pick(%L, 5, %L)', :'r1'
 select public.get_league_state(:'lid') as st \gset
 select pg_temp.check(jsonb_array_length((:'st'::jsonb)->'current'->'submissions') = 3, 'voters see all picks');
 select pg_temp.check(not ((:'st'::jsonb)->'current'->'submissions'->0 ? 'user_id'), 'picks are anonymous during voting');
+select pg_temp.check(exists (select 1 from jsonb_array_elements((:'st'::jsonb)->'current'->'submissions') e where e->>'gif_url' like 'https://media1.giphy.com/%'), 'GIF visible during voting');
 select pg_temp.check(((:'st'::jsonb)->'current'->'live_totals') = 'null', 'totals hidden before locking in');
 
 select id as s_a from public.get_league_state(:'lid') x, jsonb_to_recordset(x->'current'->'submissions') as t(id uuid, title text) where title = 'Heat' \gset

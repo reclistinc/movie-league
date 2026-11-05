@@ -4,6 +4,7 @@ import { Trophy } from "lucide-react";
 import type { LeagueState, ResultPick, Round } from "@/lib/types";
 import { BackdropCard, TrailerButton } from "./media";
 import { Avatar, Poster, memberMap } from "./ui";
+import { PickGif } from "./GifPicker";
 
 /** Full breakdown of a finished round: winner hero + ranked ticket stubs with votes and comments. */
 export function RoundResults({ round, picks, state }: { round: Round; picks: ResultPick[]; state: LeagueState }) {
@@ -73,6 +74,7 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
                 </span>
               </div>
               {p.note && <div className="mt-1 text-[13px]">{p.note}</div>}
+              <PickGif url={p.gif_url} />
               {p.votes.some((v) => v.points > 0) && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {p.votes
