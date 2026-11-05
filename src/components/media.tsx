@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { FastForward, Play, RotateCcw, RotateCw, X } from "lucide-react";
+import { FastForward, Play, RotateCcw, RotateCw, Volume2, X } from "lucide-react";
 import type { MovieDetails, MovieVideo, TrendingMovie } from "@/lib/types";
 import { POSTER_BASE } from "./ui";
 
@@ -91,6 +91,10 @@ function TrailerModal({ title, videos, onClose }: { title: string; videos: Movie
   const [current, setCurrent] = useState(videos[0]);
   const frame = useRef<HTMLIFrameElement>(null);
   const time = useRef(0);
+  // Browsers only reliably allow autoplay when muted, so every video starts muted and
+  // plays; one tap on "Tap for sound" unmutes (and later clips keep the sound on).
+  const [muted, setMuted] = useState(true);
+  const soundWanted = useRef(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -100,6 +104,7 @@ function TrailerModal({ title, videos, onClose }: { title: string; videos: Movie
       try {
         const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
         if (typeof data?.info?.currentTime === "number") time.current = data.info.currentTime;
+        if (typeof data?.info?.muted === "boolean") setMuted(data.info.muted);
       } catch {}
     };
     window.addEventListener("keydown", onKey);
@@ -113,6 +118,13 @@ function TrailerModal({ title, videos, onClose }: { title: string; videos: Movie
   }, [onClose]);
 
   const send = (msg: object) => frame.current?.contentWindow?.postMessage(JSON.stringify(msg), "*");
+  const unmute = () => {
+    soundWanted.current = true;
+    send({ event: "command", func: "unMute", args: [] });
+    send({ event: "command", func: "setVolume", args: [100] });
+    send({ event: "command", func: "playVideo", args: [] });
+    setMuted(false);
+  };
   const skip = (seconds: number) => {
     const to = Math.max(0, time.current + seconds);
     time.current = to;
@@ -142,7 +154,7 @@ function TrailerModal({ title, videos, onClose }: { title: string; videos: Movie
             ref={frame}
             key={current.key}
             className="absolute inset-0 h-full w-full"
-            src={`https://www.youtube-nocookie.com/embed/${current.key}?autoplay=1&rel=0&playsinline=1&controls=1&fs=1&enablejsapi=1&origin=${encodeURIComponent(
+            src={`https://www.youtube-nocookie.com/embed/${current.key}?autoplay=1&mute=1&rel=0&playsinline=1&controls=1&fs=1&enablejsapi=1&origin=${encodeURIComponent(
               typeof window === "undefined" ? "" : window.location.origin,
             )}`}
             title={current.name}
@@ -151,8 +163,25 @@ function TrailerModal({ title, videos, onClose }: { title: string; videos: Movie
             onLoad={() => {
               time.current = 0;
               send({ event: "listening", id: current.key, channel: "widget" });
+              // Nudge playback (muted autoplay is always allowed) and restore sound if they asked for it.
+              setTimeout(() => {
+                send({ event: "command", func: "playVideo", args: [] });
+                if (soundWanted.current) {
+                  send({ event: "command", func: "unMute", args: [] });
+                  send({ event: "command", func: "setVolume", args: [100] });
+                }
+              }, 400);
             }}
           />
+          {muted && (
+            <button
+              type="button"
+              onClick={unmute}
+              className="btn-primary absolute bottom-12 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 px-4 py-2.5 text-sm shadow-lg shadow-black/50"
+            >
+              <Volume2 size={18} /> Tap for sound
+            </button>
+          )}
         </div>
         <div className="mt-2 flex items-center justify-center gap-2">
           <button onClick={() => skip(-10)} className="btn-ghost flex items-center gap-1 px-3 py-1.5 text-sm">
@@ -170,7 +199,10 @@ function TrailerModal({ title, videos, onClose }: { title: string; videos: Movie
             {videos.map((v) => (
               <button
                 key={v.key}
-                onClick={() => setCurrent(v)}
+                onClick={() => {
+                  setCurrent(v);
+                  setMuted(!soundWanted.current);
+                }}
                 className="w-36 shrink-0 text-left"
                 style={{ opacity: v.key === current.key ? 1 : 0.65 }}
               >
