@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { AVATAR_KEYS } from "@/lib/avatars";
 import type { InvitePreview } from "@/lib/types";
-import { AvatarPicker, Button, Card, ErrorText, Field, inputCls } from "./ui";
+import { AVATAR_OPTIONS } from "./art";
+import { AvatarPicker, ErrorText, Marquee } from "./ui";
 
 export function Join({ code }: { code: string }) {
   const router = useRouter();
@@ -20,15 +20,15 @@ export function Join({ code }: { code: string }) {
       (p) => {
         if (p?.already_member) router.replace(`/?league=${p.league_id}`);
         setPreview(p);
-        if (p) setAvatar(AVATAR_KEYS.find((k) => !p.taken_avatars.includes(k)) ?? AVATAR_KEYS[0]);
+        if (p) setAvatar(AVATAR_OPTIONS.find((a) => !p.taken_avatars.includes(a.id))?.id ?? AVATAR_OPTIONS[0].id);
       },
       (e) => setError(e.message),
     );
   }, [code, router]);
 
-  if (preview === undefined) return <p className="text-zinc-500">Loading invite…</p>;
-  if (preview === null) return <Card>That invite code doesn&apos;t match any league.</Card>;
-  if (preview.status === "complete") return <Card>{preview.name}&apos;s season is already over.</Card>;
+  if (preview === undefined) return <p style={{ color: "var(--reel-grey)" }}>Loading invite…</p>;
+  if (preview === null) return <div className="card p-5">That invite code doesn&apos;t match any league.</div>;
+  if (preview.status === "complete") return <div className="card p-5">{preview.name}&apos;s season is already over.</div>;
 
   async function join(e: React.FormEvent) {
     e.preventDefault();
@@ -44,21 +44,39 @@ export function Join({ code }: { code: string }) {
   }
 
   return (
-    <Card>
-      <form onSubmit={join} className="space-y-4">
-        <h1 className="text-lg font-bold">Join {preview.name}</h1>
-        <p className="text-sm text-zinc-400">
-          {preview.member_count} players so far.
-          {preview.status === "active" && " The season is underway — you'll start with the next round."}
-        </p>
-        <Field label="Your name in this league">
-          <input className={inputCls} required maxLength={40} value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-        </Field>
-        <p className="text-sm text-zinc-400">Pick your character</p>
+    <form onSubmit={join} className="mx-auto max-w-[420px] space-y-5">
+      <Marquee>
+        <div className="text-center">
+          <div className="display text-[40px] leading-none" style={{ color: "var(--marquee-gold)" }}>
+            {preview.name}
+          </div>
+          <div className="mt-1 text-[13px]" style={{ color: "var(--reel-grey)" }}>
+            pick a name to step up to the box office
+          </div>
+        </div>
+      </Marquee>
+      <p className="text-center text-sm" style={{ color: "var(--reel-grey)" }}>
+        {preview.member_count} player{preview.member_count === 1 ? "" : "s"} so far
+        {preview.status === "active" && " · the season is underway — you'll start with the next round"}
+      </p>
+      <div>
+        <div className="label mb-3 text-center">Pick your avatar</div>
         <AvatarPicker value={avatar} onChange={setAvatar} taken={preview.taken_avatars} />
-        <ErrorText error={error} />
-        <Button disabled={busy || !avatar}>{busy ? "Joining…" : "Join league"}</Button>
-      </form>
-    </Card>
+      </div>
+      <div className="flex gap-2">
+        <input
+          className="field mono flex-1"
+          required
+          maxLength={40}
+          placeholder="Your name"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+        />
+        <button className="btn-primary px-5" disabled={busy || !avatar}>
+          {busy ? "Joining…" : "Join"}
+        </button>
+      </div>
+      <ErrorText error={error} />
+    </form>
   );
 }

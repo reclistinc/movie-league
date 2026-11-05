@@ -124,3 +124,28 @@ export interface ChatMessage {
   body: string;
   created_at: string;
 }
+
+export interface TrendingMovie {
+  tmdb_id: number;
+  title: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+}
+
+export interface MovieVideo {
+  key: string; // YouTube video id
+  name: string;
+  type: string; // Trailer | Teaser | Clip | Featurette
+}
+
+export interface MovieDetails {
+  tmdb_id: number;
+  title: string;
+  overview: string;
+  runtime: number | null;
+  release_year: number | null;
+  backdrop_path: string | null;
+  poster_path: string | null;
+  genres: string[];
+  videos: MovieVideo[];
+}

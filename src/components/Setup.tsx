@@ -1,21 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronRight, Clapperboard, Plus, Users } from "lucide-react";
 import { api } from "@/lib/api";
+import { THEMES, sampleThemes } from "@/lib/themes";
 import type { LeagueState } from "@/lib/types";
-import { Avatar, Button, Card, ErrorText, Field, InviteLink, inputCls } from "./ui";
+import { Avatar, ErrorText, InviteLink, Marquee, SectionTitle } from "./ui";
+
+type QueueItem = { theme: string; description: string };
 
 // Commissioner plans the whole season queue before starting; everyone else sees the lobby.
 export function Setup({ state, onChange }: { state: LeagueState; onChange: () => void }) {
   const isComm = state.league.is_commissioner;
-  const [queue, setQueue] = useState(
-    state.rounds.map((r) => ({ theme: r.theme, description: r.description ?? "" })),
-  );
-  const [draft, setDraft] = useState({ theme: "", description: "" });
+  const saved = state.rounds.map((r) => ({ theme: r.theme, description: r.description ?? "" }));
+  const [queue, setQueue] = useState<QueueItem[]>(saved);
+  const [themeInput, setThemeInput] = useState("");
+  const [themeSummary, setThemeSummary] = useState("");
+  const [showBrowser, setShowBrowser] = useState(false);
+  const [browserSample, setBrowserSample] = useState<{ title: string; summary: string }[]>([]); // filled when the browser opens
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const dirty =
-    JSON.stringify(queue) !== JSON.stringify(state.rounds.map((r) => ({ theme: r.theme, description: r.description ?? "" })));
+  const dirty = JSON.stringify(queue) !== JSON.stringify(saved);
 
   async function run(fn: () => Promise<unknown>) {
     setBusy(true);
@@ -30,6 +35,21 @@ export function Setup({ state, onChange }: { state: LeagueState; onChange: () =>
     }
   }
 
+  const pickTheme = (t: { title: string; summary: string }) => {
+    setThemeInput(t.title);
+    setThemeSummary(t.summary);
+  };
+  const surpriseMe = () => {
+    const used = new Set(queue.map((q) => q.theme));
+    const pool = THEMES.filter((t) => !used.has(t.title));
+    pickTheme(pool[Math.floor(Math.random() * pool.length)] ?? THEMES[0]);
+  };
+  const addToQueue = () => {
+    if (!themeInput.trim()) return;
+    setQueue([...queue, { theme: themeInput.trim(), description: themeSummary }]);
+    setThemeInput("");
+    setThemeSummary("");
+  };
   const move = (i: number, d: number) => {
     const q = [...queue];
     const [x] = q.splice(i, 1);
@@ -39,88 +59,177 @@ export function Setup({ state, onChange }: { state: LeagueState; onChange: () =>
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-black">{state.league.name}</h1>
-      <Card>
-        <p className="text-sm text-zinc-400">
-          Lobby · {state.league.vote_budget} vote points · {state.league.submission_days}-day picks ·{" "}
-          {state.league.voting_days}-day voting
+      <Marquee>
+        <div className="text-center">
+          <div className="display text-[34px] leading-none" style={{ color: "var(--marquee-gold)" }}>
+            {isComm ? "BUILD THE SEASON" : state.league.name}
+          </div>
+          <div className="mt-1 text-[13px]" style={{ color: "var(--reel-grey)" }}>
+            {isComm ? state.league.name : "the lobby — waiting for the commissioner to roll film"}
+          </div>
+        </div>
+      </Marquee>
+
+      <div className="card p-5">
+        <SectionTitle icon={<Users size={16} color="var(--marquee-gold)" />}>IN THE LOBBY</SectionTitle>
+        <div className="flex flex-wrap gap-3">
+          {state.members.map((m) => (
+            <span key={m.user_id} className="flex items-center gap-2 text-sm">
+              <Avatar avatar={m.avatar} size={30} /> {m.display_name}
+              {m.user_id === state.me && <span style={{ color: "var(--reel-grey)" }}>(you)</span>}
+            </span>
+          ))}
+        </div>
+        <p className="mt-4 text-[13px]" style={{ color: "var(--reel-grey)" }}>
+          <b style={{ color: "var(--screen-white)" }}>{state.league.vote_budget}</b> points per voter ·{" "}
+          {state.league.submission_days}-day picks · {state.league.voting_days}-day voting
         </p>
         <p className="mt-2 text-sm">
-          Invite code: <InviteLink code={state.league.invite_code} />
+          Invite: <InviteLink code={state.league.invite_code} />
         </p>
-        <ul className="mt-3 flex flex-wrap gap-3">
-          {state.members.map((m) => (
-            <li key={m.user_id} className="flex items-center gap-2 text-sm">
-              <Avatar avatar={m.avatar} size={28} /> {m.display_name}
-            </li>
-          ))}
-        </ul>
-      </Card>
+      </div>
 
-      <Card className="space-y-3">
-        <h2 className="font-semibold">Season queue</h2>
-        {queue.length === 0 && <p className="text-sm text-zinc-500">No rounds yet.</p>}
-        <ol className="space-y-2">
-          {queue.map((r, i) => (
-            <li key={i} className="flex items-start gap-2 rounded-lg bg-zinc-950 p-2">
-              <span className="w-5 text-zinc-500">{i + 1}.</span>
+      <div className="card p-5">
+        <SectionTitle icon={<Clapperboard size={16} color="var(--marquee-gold)" />}>SEASON QUEUE</SectionTitle>
+        {isComm && (
+          <p className="mb-4 text-[13px]" style={{ color: "var(--reel-grey)" }}>
+            Queue every round&apos;s theme now — it locks when the season starts.
+          </p>
+        )}
+        {queue.length === 0 && (
+          <p className="mb-3 text-sm" style={{ color: "var(--reel-grey)" }}>
+            No rounds queued yet.
+          </p>
+        )}
+        <div className="mb-4 flex flex-col gap-1.5">
+          {queue.map((q, i) => (
+            <div key={i} className="inset flex items-center gap-3 px-3 py-2">
+              <span className="mono w-5" style={{ color: i === 0 ? "var(--marquee-gold)" : "var(--reel-grey)" }}>
+                {i + 1}
+              </span>
               <div className="flex-1">
-                <p className="font-medium">{r.theme}</p>
-                {r.description && <p className="text-xs text-zinc-400">{r.description}</p>}
+                <div className="text-sm font-bold">{q.theme}</div>
+                {q.description && (
+                  <div className="text-xs" style={{ color: "var(--reel-grey)" }}>
+                    {q.description}
+                  </div>
+                )}
               </div>
               {isComm && (
                 <div className="flex gap-1 text-xs">
-                  <button disabled={i === 0} onClick={() => move(i, -1)} className="px-1 disabled:opacity-30">↑</button>
-                  <button disabled={i === queue.length - 1} onClick={() => move(i, 1)} className="px-1 disabled:opacity-30">↓</button>
-                  <button onClick={() => setQueue(queue.filter((_, j) => j !== i))} className="px-1 text-red-400">✕</button>
+                  <button disabled={i === 0} onClick={() => move(i, -1)} className="px-1 disabled:opacity-30">
+                    ↑
+                  </button>
+                  <button disabled={i === queue.length - 1} onClick={() => move(i, 1)} className="px-1 disabled:opacity-30">
+                    ↓
+                  </button>
+                  <button onClick={() => setQueue(queue.filter((_, j) => j !== i))} className="px-1.5" style={{ color: "var(--ticket-red)" }}>
+                    ×
+                  </button>
                 </div>
               )}
-            </li>
+            </div>
           ))}
-        </ol>
+        </div>
+
         {isComm && (
           <>
-            <form
-              className="space-y-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!draft.theme.trim()) return;
-                setQueue([...queue, { theme: draft.theme.trim(), description: draft.description.trim() }]);
-                setDraft({ theme: "", description: "" });
-              }}
-            >
-              <Field label="Theme">
-                <input className={inputCls} maxLength={120} placeholder="e.g. Best heist movie" value={draft.theme} onChange={(e) => setDraft({ ...draft, theme: e.target.value })} />
-              </Field>
-              <Field label="Description (optional)">
-                <input className={inputCls} maxLength={500} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
-              </Field>
-              <Button variant="ghost">Add round</Button>
-            </form>
-            <div className="flex flex-wrap gap-2 border-t border-zinc-800 pt-3">
-              <Button disabled={busy || !dirty} onClick={() => run(() => api.setQueue(state.league.id, queue))}>
-                Save queue
-              </Button>
-              <Button
-                disabled={busy || dirty || queue.length === 0 || state.members.length < 2}
-                onClick={() => {
-                  if (confirm("Start the season? The queue locks and round 1 opens for submissions.")) {
-                    run(() => api.startSeason(state.league.id));
-                  }
+            <div className="flex flex-wrap gap-2">
+              <input
+                className="field min-w-[180px] flex-1"
+                maxLength={120}
+                placeholder="e.g. a movie set in one location"
+                value={themeInput}
+                onChange={(e) => {
+                  setThemeInput(e.target.value);
+                  setThemeSummary("");
                 }}
-              >
-                Start season
-              </Button>
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addToQueue())}
+              />
+              <button onClick={surpriseMe} title="Surprise me" className="btn-ghost px-3.5 text-lg">
+                🎲
+              </button>
+              <button onClick={addToQueue} disabled={!themeInput.trim()} className="btn-primary flex items-center gap-1.5 px-4">
+                <Plus size={16} /> Add round
+              </button>
             </div>
-            <p className="text-xs text-zinc-500">
-              {dirty ? "Save the queue before starting. " : ""}
-              Needs at least 1 round and 2 players. The queue can&apos;t change once the season starts.
-            </p>
+            <select
+              value=""
+              onChange={(e) => {
+                const t = THEMES.find((x) => x.title === e.target.value);
+                if (t) pickTheme(t);
+              }}
+              className="field mono mt-2 text-sm"
+            >
+              <option value="">Or pick from all {THEMES.length} theme ideas…</option>
+              {THEMES.map((t) => (
+                <option key={t.title} value={t.title}>
+                  {t.title}
+                </option>
+              ))}
+            </select>
+            {themeSummary && (
+              <p className="mt-2 text-[13px] italic" style={{ color: "var(--marquee-gold)" }}>
+                {themeSummary}
+              </p>
+            )}
+            <button
+              onClick={() => {
+                if (!showBrowser) setBrowserSample(sampleThemes(8));
+                setShowBrowser(!showBrowser);
+              }}
+              className="btn-ghost mt-3 px-3 py-1.5 text-xs"
+              style={{ color: "var(--reel-grey)" }}
+            >
+              {showBrowser ? "Hide idea cards" : "Browse theme ideas"}
+            </button>
+            {showBrowser && (
+              <div className="mt-3">
+                <div className="flex flex-col gap-1.5">
+                  {browserSample.map((t) => (
+                    <button key={t.title} onClick={() => pickTheme(t)} className="inset px-3 py-2 text-left">
+                      <div className="text-sm font-bold">{t.title}</div>
+                      <div className="mt-0.5 text-xs" style={{ color: "var(--reel-grey)" }}>
+                        {t.summary}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <button onClick={() => setBrowserSample(sampleThemes(8))} className="btn-ghost mono mt-2 px-3 py-1.5 text-xs">
+                  Show 8 more
+                </button>
+              </div>
+            )}
           </>
         )}
-        {!isComm && <p className="text-sm text-zinc-400">Waiting for the commissioner to start the season…</p>}
-        <ErrorText error={error} />
-      </Card>
+      </div>
+
+      {isComm && (
+        <div className="space-y-2">
+          {dirty && (
+            <button disabled={busy} onClick={() => run(() => api.setQueue(state.league.id, queue))} className="btn-ghost w-full px-4 py-3">
+              Save queue
+            </button>
+          )}
+          <button
+            disabled={busy || dirty || queue.length === 0 || state.members.length < 2}
+            onClick={() => {
+              if (confirm("Start the season? The queue locks and round 1 opens for picks.")) run(() => api.startSeason(state.league.id));
+            }}
+            className="btn-primary flex w-full items-center justify-center gap-2 px-4 py-3.5 text-base"
+          >
+            <ChevronRight size={18} /> Start the season ({queue.length} round{queue.length === 1 ? "" : "s"})
+          </button>
+          <p className="text-center text-xs" style={{ color: "var(--reel-grey)" }}>
+            {dirty
+              ? "Save the queue before starting."
+              : state.members.length < 2
+                ? "Share the invite — you need at least 2 players to start."
+                : "Rounds can't be added or changed once the season starts."}
+          </p>
+        </div>
+      )}
+      <ErrorText error={error} />
     </div>
   );
 }

@@ -1,45 +1,104 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Check, Clapperboard, Lock, Ticket } from "lucide-react";
 import { api } from "@/lib/api";
 import type { LeagueState, Movie, Round, VotingPick } from "@/lib/types";
-import { Button, Card, ErrorText, Poster, inputCls, timeLeft } from "./ui";
+import { BackdropCard, TrailerButton, useMovieDetails } from "./media";
+import { RoundResults } from "./Results";
+import { ErrorText, Poster, timeLeft } from "./ui";
 
 export function RoundPanel({ state, onChange }: { state: LeagueState; onChange: () => void }) {
   const round = state.rounds.find((r) => r.id === state.current?.round_id);
+  const [gateDismissed, setGateDismissed] = useState<string | null>(null); // "<round>:<phase>"
+
   if (!round || !state.current) {
-    return <Card>No round is open right now.{state.league.status === "complete" && " The season is over!"}</Card>;
+    const last = [...state.rounds].reverse().find((r) => r.status === "complete");
+    if (last) return <RoundResults round={last} picks={state.results[last.id] ?? []} state={state} />;
+    return <div className="card p-5">No round is open right now.</div>;
   }
+
   const cur = state.current;
+  const gateKey = `${round.id}:${round.status}`;
+  const needsAction =
+    (round.status === "submitting" && cur.is_participant && !cur.my_submission) ||
+    (round.status === "voting" && cur.is_voter && !cur.ballot_locked);
+
+  // Per-player gate screen, as in the prototype.
+  if (needsAction && gateDismissed !== gateKey) {
+    const voting = round.status === "voting";
+    const me = state.members.find((m) => m.user_id === state.me);
+    return (
+      <div className="card p-6 text-center">
+        {voting ? <Ticket size={24} color="var(--marquee-gold)" className="mx-auto mb-2" /> : <Clapperboard size={24} color="var(--marquee-gold)" className="mx-auto mb-2" />}
+        <div className="label">Round {round.position} · theme</div>
+        <div className="display mt-0.5 text-[28px] leading-tight" style={{ color: "var(--marquee-gold)" }}>
+          {round.theme}
+        </div>
+        {round.description && (
+          <p className="mt-1 text-sm italic" style={{ color: "var(--reel-grey)" }}>
+            {round.description}
+          </p>
+        )}
+        <p className="mt-3">
+          Hi {me?.display_name} — {voting ? "you haven't voted on this round yet." : "you haven't submitted a movie yet."}
+        </p>
+        <p className="mono mt-1 text-xs" style={{ color: "var(--reel-grey)" }}>
+          {voting ? "Voting" : "Submissions"} {timeLeft(voting ? round.voting_deadline : round.submission_deadline)}
+        </p>
+        <button onClick={() => setGateDismissed(gateKey)} className="btn-primary mt-5 px-6 py-3">
+          {voting ? "Begin Voting" : "Start My Submission"}
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <p className="text-xs uppercase text-amber-400">
-          Round {round.position} · {round.status === "submitting" ? "Submissions" : "Voting"} ·{" "}
-          {timeLeft(round.status === "submitting" ? round.submission_deadline : round.voting_deadline)}
-        </p>
-        <h2 className="text-xl font-bold">{round.theme}</h2>
-        {round.description && <p className="text-sm text-zinc-400">{round.description}</p>}
-      </Card>
+    <div className="space-y-3">
+      <ThemeHeader round={round} />
       {round.status === "submitting" &&
         (cur.is_participant ? (
           <Submit round={round} state={state} onChange={onChange} />
         ) : (
-          <Card>You joined after this round opened — you&apos;re in from the next one.</Card>
+          <div className="card p-5 text-sm">You joined after this round opened — you&apos;re in from the next one.</div>
         ))}
       {round.status === "voting" &&
         (cur.ballot_locked ? (
-          <Locked state={state} />
+          <Locked state={state} round={round} />
         ) : cur.is_voter ? (
           <Vote round={round} state={state} onChange={onChange} />
         ) : (
-          <Card>You&apos;re not voting in this round. Results appear when voting closes.</Card>
+          <div className="card p-5 text-sm">You&apos;re not voting in this round. Results appear when voting closes.</div>
         ))}
     </div>
   );
 }
 
+function ThemeHeader({ round }: { round: Round }) {
+  const voting = round.status === "voting";
+  const deadline = voting ? round.voting_deadline : round.submission_deadline;
+  const left = timeLeft(deadline);
+  const late = left === "Deadline passed";
+  return (
+    <div className="card p-5">
+      <div className="label">{voting ? "Voting now" : "Now showing"} · round {round.position} theme</div>
+      <div className="display mt-0.5 text-[28px] leading-tight" style={{ color: "var(--marquee-gold)" }}>
+        {round.theme}
+      </div>
+      {round.description && (
+        <p className="text-sm italic" style={{ color: "var(--reel-grey)" }}>
+          {round.description}
+        </p>
+      )}
+      <p className="mono mt-1 text-xs" style={{ color: late ? "var(--ticket-red)" : "var(--reel-grey)" }}>
+        {voting ? "Voting" : "Submissions"} {left}
+      </p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Submitting
 // ---------------------------------------------------------------------------
 
 function Submit({ round, state, onChange }: { round: Round; state: LeagueState; onChange: () => void }) {
@@ -47,6 +106,7 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
   const [editing, setEditing] = useState(!mine);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Movie[]>([]);
+  const [searching, setSearching] = useState(false);
   const [chosen, setChosen] = useState<Movie | null>(null);
   const [note, setNote] = useState(mine?.note ?? "");
   const [busy, setBusy] = useState(false);
@@ -55,10 +115,18 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
 
   useEffect(() => {
     if (query.trim().length < 2) return;
+    let live = true;
     const t = setTimeout(() => {
-      api.searchMovies(query).then(setResults, (e) => setError(e.message));
+      setSearching(true);
+      api
+        .searchMovies(query)
+        .then((r) => live && setResults(r), (e) => live && setError(e.message))
+        .finally(() => live && setSearching(false));
     }, 300);
-    return () => clearTimeout(t);
+    return () => {
+      live = false;
+      clearTimeout(t);
+    };
   }, [query]);
 
   async function submit() {
@@ -78,67 +146,138 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
     }
   }
 
+  const status = (
+    <p className="text-[13px]" style={{ color: "var(--reel-grey)" }}>
+      {round.submitted_ids.length} of {round.participant_ids.length} have submitted
+      {waitingOn > 0 && " — names stay hidden until results"}
+    </p>
+  );
+
   if (mine && !editing) {
     return (
-      <Card className="flex gap-4">
-        <Poster movie={mine} width={92} />
-        <div className="flex-1 space-y-2">
-          <p className="text-xs text-zinc-400">Your pick</p>
-          <p className="text-lg font-bold">
-            {mine.title} {mine.release_year && <span className="text-zinc-500">({mine.release_year})</span>}
-          </p>
-          {mine.note && <p className="text-sm italic text-zinc-300">&ldquo;{mine.note}&rdquo;</p>}
-          <p className="text-xs text-zinc-500">
-            Waiting on {waitingOn} more player{waitingOn === 1 ? "" : "s"}. You can change your pick until everyone has submitted.
-          </p>
-          <Button variant="ghost" onClick={() => setEditing(true)}>
-            Change pick
-          </Button>
-        </div>
-      </Card>
+      <>
+        <BackdropCard tmdbId={mine.tmdb_id} strong className="card overflow-hidden">
+          <div className="flex gap-4 p-5">
+            <Poster movie={mine} width={110} />
+            <div className="min-w-0 flex-1">
+              <div className="mono flex items-center gap-1.5 text-xs uppercase" style={{ color: "var(--marquee-gold)" }}>
+                <Check size={14} /> Your pick is in
+              </div>
+              <div className="display mt-1 text-3xl leading-tight">{mine.title}</div>
+              <div className="mono text-sm" style={{ color: "var(--reel-grey)" }}>
+                {mine.release_year}
+              </div>
+              {mine.note && <p className="mt-2 text-sm italic">&ldquo;{mine.note}&rdquo;</p>}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <TrailerButton tmdbId={mine.tmdb_id} title={mine.title} />
+                <button onClick={() => setEditing(true)} className="btn-ghost px-3 py-1.5 text-sm">
+                  Change my submission
+                </button>
+              </div>
+            </div>
+          </div>
+        </BackdropCard>
+        {status}
+        <p className="text-xs" style={{ color: "var(--reel-grey)" }}>
+          You can change your pick until everyone has submitted — then voting opens automatically.
+        </p>
+      </>
     );
   }
 
+  const shown = query.trim().length < 2 ? [] : results;
+
   return (
-    <Card className="space-y-3">
-      <input className={`${inputCls} w-full`} autoFocus placeholder="Search for a movie…" value={query} onChange={(e) => setQuery(e.target.value)} />
-      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-        {(query.trim().length < 2 ? [] : results).map((m) => (
-          <button
-            key={m.tmdb_id}
-            onClick={() => setChosen(m)}
-            className={`flex flex-col items-center gap-1 rounded-lg p-1 text-center text-xs ${
-              chosen?.tmdb_id === m.tmdb_id ? "bg-amber-500/20 ring-2 ring-amber-400" : "hover:bg-zinc-800"
-            }`}
-          >
-            <Poster movie={m} width={92} />
-            <span>
-              {m.title} {m.release_year && <span className="text-zinc-500">({m.release_year})</span>}
-            </span>
-          </button>
-        ))}
-      </div>
-      {chosen && (
-        <div className="space-y-2 border-t border-zinc-800 pt-3">
-          <p className="text-sm">
-            Picking <b>{chosen.title}</b>
-          </p>
-          <input className={`${inputCls} w-full`} maxLength={280} placeholder="Add a note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
-          <Button disabled={busy} onClick={submit}>
-            {busy ? "Submitting…" : mine ? "Change my pick" : "Submit pick"}
-          </Button>
-        </div>
+    <div className="card space-y-4 p-5">
+      {status}
+      {chosen ? (
+        <ChosenPreview movie={chosen} onClear={() => setChosen(null)} />
+      ) : (
+        <>
+          <input className="field" autoFocus placeholder="Search for your pick…" value={query} onChange={(e) => setQuery(e.target.value)} />
+          {searching && shown.length === 0 && (
+            <p className="text-sm" style={{ color: "var(--reel-grey)" }}>
+              Searching…
+            </p>
+          )}
+          {shown.length > 0 && (
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+              {shown.map((m) => (
+                <button key={m.tmdb_id} onClick={() => setChosen(m)} className="group flex flex-col items-center gap-1.5 text-center">
+                  <div className="transition group-hover:scale-[1.03]">
+                    <Poster movie={m} width={100} />
+                  </div>
+                  <span className="text-xs leading-tight">
+                    {m.title}{" "}
+                    {m.release_year && <span style={{ color: "var(--reel-grey)" }}>({m.release_year})</span>}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </>
       )}
-      {mine && (
-        <Button variant="ghost" onClick={() => setEditing(false)}>
-          Keep {mine.title}
-        </Button>
+
+      <div>
+        <div className="label mb-2">Why this pick fits the theme (optional)</div>
+        <textarea
+          className="field resize-y"
+          rows={2}
+          maxLength={280}
+          placeholder="Say a word or two about why you picked this…"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {chosen && (
+          <button disabled={busy} onClick={submit} className="btn-primary px-5 py-2.5">
+            {busy ? "Locking in…" : mine ? "Update submission" : "Lock in submission"}
+          </button>
+        )}
+        {mine && (
+          <button onClick={() => setEditing(false)} className="btn-ghost px-5 py-2.5">
+            Cancel
+          </button>
+        )}
+      </div>
+      {!chosen && (
+        <p className="text-xs" style={{ color: "var(--reel-grey)" }}>
+          Pick a movie above to finish your submission.
+        </p>
       )}
       <ErrorText error={error} />
-    </Card>
+    </div>
   );
 }
 
+function ChosenPreview({ movie, onClear }: { movie: Movie; onClear: () => void }) {
+  const d = useMovieDetails(movie.tmdb_id);
+  return (
+    <BackdropCard tmdbId={movie.tmdb_id} strong className="overflow-hidden rounded-lg border" >
+      <div className="flex gap-4 p-4" style={{ borderColor: "var(--marquee-gold)" }}>
+        <Poster movie={movie} width={92} />
+        <div className="min-w-0 flex-1">
+          <div className="display text-2xl leading-tight">{movie.title}</div>
+          <div className="mono text-xs" style={{ color: "var(--reel-grey)" }}>
+            {[movie.release_year, d?.runtime ? `${d.runtime} min` : null, d?.genres.slice(0, 2).join(" / ")].filter(Boolean).join(" · ")}
+          </div>
+          {d?.overview && <p className="mt-2 line-clamp-3 text-[13px]">{d.overview}</p>}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <TrailerButton tmdbId={movie.tmdb_id} title={movie.title} compact />
+            <button onClick={onClear} className="btn-ghost px-2.5 py-1 text-xs">
+              Change
+            </button>
+          </div>
+        </div>
+      </div>
+    </BackdropCard>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Voting
 // ---------------------------------------------------------------------------
 
 function Vote({ round, state, onChange }: { round: Round; state: LeagueState; onChange: () => void }) {
@@ -153,9 +292,8 @@ function Vote({ round, state, onChange }: { round: Round; state: LeagueState; on
 
   const bump = (id: string, d: number) =>
     setPoints((p) => {
-      const next = Math.max(0, (p[id] ?? 0) + d);
       if (d > 0 && left <= 0) return p;
-      return { ...p, [id]: next };
+      return { ...p, [id]: Math.max(0, (p[id] ?? 0) + d) };
     });
 
   async function lockIn() {
@@ -180,79 +318,115 @@ function Vote({ round, state, onChange }: { round: Round; state: LeagueState; on
 
   return (
     <div className="space-y-3">
-      <Card className="sticky top-2 z-10 flex items-center justify-between">
-        <span>
-          <b className={left === 0 ? "text-green-400" : "text-amber-400"}>{left}</b> of {budget} points left
+      <div className="card sticky top-2 z-20 flex items-center justify-between gap-3 px-4 py-3">
+        <span className="text-sm">
+          <b className="mono text-lg" style={{ color: left === 0 ? "var(--marquee-gold)" : "var(--screen-white)" }}>
+            {left}
+          </b>{" "}
+          of {budget} points left
         </span>
-        <Button disabled={busy || left !== 0} onClick={lockIn}>
-          {busy ? "Locking…" : "Lock in votes"}
-        </Button>
-      </Card>
+        <button disabled={busy || left !== 0} onClick={lockIn} className="btn-primary px-4 py-2 text-sm">
+          {busy ? "Locking…" : left === 0 ? "Lock in my votes" : `Use all ${budget} points`}
+        </button>
+      </div>
       {picks.map((p) => (
-        <PickCard key={p.id} pick={p}>
+        <PickTicket key={p.id} pick={p}>
           {p.is_mine ? (
-            <p className="text-xs text-zinc-500">Your pick — you can&apos;t vote for it.</p>
+            <span className="text-xs" style={{ color: "var(--reel-grey)" }}>
+              This is your submission — you can&apos;t give it points
+            </span>
           ) : (
             <>
-              <div className="flex items-center gap-3">
-                <Button variant="ghost" className="px-3" onClick={() => bump(p.id, -1)}>
+              <div className="flex items-center gap-2.5">
+                <button disabled={(points[p.id] ?? 0) === 0} onClick={() => bump(p.id, -1)} className="btn-ghost mono h-8 w-8">
                   −
-                </Button>
-                <span className="w-8 text-center text-xl font-bold">{points[p.id] ?? 0}</span>
-                <Button variant="ghost" className="px-3" disabled={left <= 0} onClick={() => bump(p.id, 1)}>
+                </button>
+                <span className="mono w-7 text-center text-lg">{points[p.id] ?? 0}</span>
+                <button disabled={left <= 0} onClick={() => bump(p.id, 1)} className="btn-ghost mono h-8 w-8">
                   +
-                </Button>
+                </button>
+                <span className="text-xs" style={{ color: "var(--reel-grey)" }}>
+                  pts
+                </span>
               </div>
               <input
-                className={`${inputCls} w-full text-sm`}
+                className="field mt-2 py-2 text-[13px]"
                 maxLength={500}
-                placeholder="Comment (optional, revealed after the round)"
+                placeholder="Add a comment (optional)"
                 value={comments[p.id] ?? ""}
                 onChange={(e) => setComments({ ...comments, [p.id]: e.target.value })}
               />
             </>
           )}
-        </PickCard>
+        </PickTicket>
       ))}
+      <p className="text-[13px]" style={{ color: "var(--reel-grey)" }}>
+        {round.voted_ids.length} of {round.participant_ids.length} have locked in — names and comments stay hidden until everyone&apos;s voted.
+      </p>
       <ErrorText error={error} />
     </div>
   );
 }
 
-function Locked({ state }: { state: LeagueState }) {
+function Locked({ state, round }: { state: LeagueState; round: Round }) {
   const cur = state.current!;
   const totals = Object.fromEntries((cur.live_totals ?? []).map((t) => [t.submission_id, t.points]));
   const mine = Object.fromEntries((cur.my_votes ?? []).map((v) => [v.submission_id, v.points]));
   const picks = [...(cur.submissions ?? [])].sort((a, b) => (totals[b.id] ?? 0) - (totals[a.id] ?? 0));
   return (
     <div className="space-y-3">
-      <Card className="text-sm">
-        🔒 Votes locked. Here are the running totals — the round wraps up when everyone has voted.
-      </Card>
+      <div className="card flex items-center gap-2 px-4 py-3 text-sm">
+        <Lock size={15} color="var(--marquee-gold)" /> Votes locked. Running totals below — results reveal when everyone&apos;s in (
+        {round.voted_ids.length}/{round.participant_ids.length}).
+      </div>
       {picks.map((p) => (
-        <PickCard key={p.id} pick={p}>
-          <p className="text-sm">
-            <b className="text-xl">{totals[p.id] ?? 0}</b> pts so far
-            {mine[p.id] ? <span className="text-zinc-500"> · you gave {mine[p.id]}</span> : null}
-            {p.is_mine && <span className="text-zinc-500"> · your pick</span>}
-          </p>
-        </PickCard>
+        <PickTicket key={p.id} pick={p}>
+          <span className="flex items-center gap-1.5 text-xs" style={{ color: "var(--marquee-gold)" }}>
+            {p.is_mine ? "Your pick" : (
+              <>
+                <Check size={14} /> You gave this {mine[p.id] ?? 0} pts
+              </>
+            )}
+          </span>
+          <div className="mt-2 border-t border-dashed pt-2 text-xs" style={{ borderColor: "rgba(107,111,138,0.25)", color: "var(--reel-grey)" }}>
+            Current total so far:{" "}
+            <span className="mono" style={{ color: "var(--marquee-gold)" }}>
+              {totals[p.id] ?? 0} pts
+            </span>
+          </div>
+        </PickTicket>
       ))}
     </div>
   );
 }
 
-function PickCard({ pick, children }: { pick: VotingPick; children: React.ReactNode }) {
+function PickTicket({ pick, children }: { pick: VotingPick; children: React.ReactNode }) {
   return (
-    <Card className="flex gap-4">
-      <Poster movie={pick} width={80} />
-      <div className="flex-1 space-y-2">
-        <p className="font-bold">
-          {pick.title} {pick.release_year && <span className="font-normal text-zinc-500">({pick.release_year})</span>}
-        </p>
-        {pick.note && <p className="text-sm italic text-zinc-400">&ldquo;{pick.note}&rdquo;</p>}
-        {children}
-      </div>
-    </Card>
+    <div className="ticket">
+      <BackdropCard tmdbId={pick.tmdb_id} className="flex w-full">
+        <div className="flex w-full">
+          <div className="shrink-0 p-2.5">
+            <Poster movie={pick} width={76} />
+          </div>
+          <div className="stub-divider min-w-0 flex-1 px-3.5 py-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="font-bold">
+                {pick.title}{" "}
+                <span className="mono font-normal" style={{ color: "var(--reel-grey)" }}>
+                  {pick.release_year}
+                </span>
+              </div>
+              <TrailerButton tmdbId={pick.tmdb_id} title={pick.title} compact />
+            </div>
+            {pick.note && (
+              <div className="mt-1 text-[13px]" style={{ color: "var(--reel-grey)" }}>
+                {pick.note}
+              </div>
+            )}
+            <div className="mt-2.5">{children}</div>
+          </div>
+        </div>
+      </BackdropCard>
+    </div>
   );
 }

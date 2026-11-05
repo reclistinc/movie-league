@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ChevronRight, Clapperboard, Plus, Ticket } from "lucide-react";
 import { api } from "@/lib/api";
 import type { LeagueSummary } from "@/lib/types";
-import { AvatarPicker, Button, Card, ErrorText, Field, inputCls, timeLeft } from "./ui";
+import { AvatarPicker, ErrorText, Field, Marquee, SectionTitle, timeLeft } from "./ui";
 
 export function Home() {
   const router = useRouter();
@@ -22,28 +23,53 @@ export function Home() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold">Your leagues</h1>
-        <Button onClick={() => setCreating(true)}>+ New league</Button>
-      </div>
+      <Marquee>
+        <div className="text-center">
+          <div className="display text-[34px] leading-none" style={{ color: "var(--marquee-gold)" }}>
+            NOW SHOWING
+          </div>
+          <div className="mt-1 text-[13px]" style={{ color: "var(--reel-grey)" }}>
+            your leagues
+          </div>
+        </div>
+      </Marquee>
       <ErrorText error={error} />
-      {leagues?.length === 0 && <p className="text-sm text-zinc-400">No leagues yet — start one or join with a code.</p>}
+      {leagues?.length === 0 && (
+        <div className="card p-5 text-sm" style={{ color: "var(--reel-grey)" }}>
+          No leagues yet — start one, or join a friend&apos;s with their invite code.
+        </div>
+      )}
       {leagues?.map((l) => (
-        <Link key={l.id} href={`/?league=${l.id}`} className="block">
-          <Card className="hover:ring-amber-400/50">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold">{l.name}</span>
-              <span className="text-xs uppercase text-zinc-500">{l.status}</span>
+        <Link key={l.id} href={`/?league=${l.id}`} className="ticket block hover:border-[var(--marquee-gold)]">
+          <div className="flex w-16 shrink-0 items-center justify-center">
+            <Clapperboard size={22} color="var(--marquee-gold)" />
+          </div>
+          <div className="stub-divider flex-1 px-4 py-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="display text-2xl" style={{ color: "var(--marquee-gold)" }}>
+                {l.name}
+              </span>
+              <span className="mono text-[11px] uppercase" style={{ color: "var(--reel-grey)" }}>
+                {l.status === "setup" ? "in setup" : l.status}
+              </span>
             </div>
-            <p className="mt-1 text-sm text-zinc-400">
-              {l.member_count} players{l.is_commissioner && " · you're commissioner"}
-              {l.live_round &&
-                ` · "${l.live_round.theme}" — ${l.live_round.status} (${timeLeft(l.live_round.deadline)})`}
+            <p className="text-[13px]" style={{ color: "var(--reel-grey)" }}>
+              {l.member_count} players{l.is_commissioner && " · you're the commissioner"}
             </p>
-          </Card>
+            {l.live_round && (
+              <p className="mono mt-1 text-xs">
+                “{l.live_round.theme}” — {l.live_round.status === "submitting" ? "picks open" : "voting open"} ·{" "}
+                {timeLeft(l.live_round.deadline)}
+              </p>
+            )}
+          </div>
         </Link>
       ))}
-      <Card>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <button onClick={() => setCreating(true)} className="btn-primary flex items-center justify-center gap-2 px-4 py-3">
+          <Plus size={16} /> Start a new league
+        </button>
         <form
           className="flex gap-2"
           onSubmit={(e) => {
@@ -51,10 +77,26 @@ export function Home() {
             if (joinCode.trim()) router.push(`/?join=${encodeURIComponent(joinCode.trim())}`);
           }}
         >
-          <input className={`${inputCls} flex-1`} placeholder="Invite code" value={joinCode} onChange={(e) => setJoinCode(e.target.value)} />
-          <Button variant="ghost">Join</Button>
+          <input className="field mono flex-1" placeholder="Invite code" value={joinCode} onChange={(e) => setJoinCode(e.target.value)} />
+          <button className="btn-ghost flex items-center gap-1 px-3">
+            <Ticket size={15} /> Join
+          </button>
         </form>
-      </Card>
+      </div>
+    </div>
+  );
+}
+
+function Stepper({ value, onChange, min, max, step = 1 }: { value: number; onChange: (v: number) => void; min: number; max: number; step?: number }) {
+  return (
+    <div className="flex items-center gap-3">
+      <button type="button" onClick={() => onChange(Math.max(min, value - step))} className="btn-ghost mono h-9 w-9">
+        −
+      </button>
+      <span className="mono w-12 text-center text-xl">{value}</span>
+      <button type="button" onClick={() => onChange(Math.min(max, value + step))} className="btn-ghost mono h-9 w-9">
+        +
+      </button>
     </div>
   );
 }
@@ -75,7 +117,14 @@ function CreateLeague({ onCancel }: { onCancel: () => void }) {
     setBusy(true);
     setError(null);
     try {
-      const id = await api.createLeague({ name, displayName, avatar, voteBudget, submissionDays, votingDays });
+      const id = await api.createLeague({
+        name: name.trim() || "Movie League",
+        displayName,
+        avatar,
+        voteBudget,
+        submissionDays,
+        votingDays,
+      });
       router.push(`/?league=${id}`);
     } catch (err) {
       setError((err as Error).message);
@@ -84,35 +133,56 @@ function CreateLeague({ onCancel }: { onCancel: () => void }) {
   }
 
   return (
-    <Card>
-      <form onSubmit={create} className="space-y-4">
-        <h1 className="text-lg font-bold">New league</h1>
+    <form onSubmit={create} className="space-y-4">
+      <Marquee>
+        <div className="text-center">
+          <div className="display text-[34px] leading-none" style={{ color: "var(--marquee-gold)" }}>
+            CREATE YOUR GAME
+          </div>
+          <div className="mt-1 text-[13px]" style={{ color: "var(--reel-grey)" }}>
+            you&apos;ll plan the season next, before anyone gets an invite
+          </div>
+        </div>
+      </Marquee>
+
+      <div className="card space-y-4 p-5">
         <Field label="League name">
-          <input className={inputCls} required maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
+          <input className="field" maxLength={80} placeholder="e.g. The Sunday Night Movie League" value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
-        <div className="grid grid-cols-3 gap-3">
-          <Field label="Vote points">
-            <input className={inputCls} type="number" min={1} max={100} value={voteBudget} onChange={(e) => setVoteBudget(+e.target.value)} />
-          </Field>
-          <Field label="Submit days">
-            <input className={inputCls} type="number" min={1} max={30} value={submissionDays} onChange={(e) => setSubmissionDays(+e.target.value)} />
-          </Field>
-          <Field label="Vote days">
-            <input className={inputCls} type="number" min={1} max={30} value={votingDays} onChange={(e) => setVotingDays(+e.target.value)} />
-          </Field>
+        <div>
+          <div className="label mb-2">Points per voter</div>
+          <Stepper value={voteBudget} onChange={setVoteBudget} min={5} max={100} step={5} />
+          <p className="mt-1.5 text-xs" style={{ color: "var(--reel-grey)" }}>
+            Each voter spreads this many points across other players&apos; picks every round.
+          </p>
         </div>
-        <Field label="Your name in this league">
-          <input className={inputCls} required maxLength={40} value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-        </Field>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <div className="label mb-2">Days to pick</div>
+            <Stepper value={submissionDays} onChange={setSubmissionDays} min={1} max={30} />
+          </div>
+          <div>
+            <div className="label mb-2">Days to vote</div>
+            <Stepper value={votingDays} onChange={setVotingDays} min={1} max={30} />
+          </div>
+        </div>
+      </div>
+
+      <div className="card space-y-4 p-5">
+        <SectionTitle>YOUR SEAT</SectionTitle>
         <AvatarPicker value={avatar} onChange={setAvatar} />
-        <ErrorText error={error} />
-        <div className="flex gap-2">
-          <Button disabled={busy}>{busy ? "Creating…" : "Create league"}</Button>
-          <Button type="button" variant="ghost" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
-      </form>
-    </Card>
+        <input className="field mono" required maxLength={40} placeholder="Your name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+      </div>
+
+      <ErrorText error={error} />
+      <div className="flex gap-2">
+        <button className="btn-primary flex flex-1 items-center justify-center gap-2 px-4 py-3 text-base" disabled={busy}>
+          <ChevronRight size={18} /> {busy ? "Creating…" : "Create & plan the season"}
+        </button>
+        <button type="button" className="btn-ghost px-4" onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }

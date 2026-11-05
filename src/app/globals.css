@@ -1,12 +1,149 @@
 @import "tailwindcss";
 
-@theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Design system from the original prototype: midnight + marquee gold, ticket stubs, Bebas Neue. */
+:root {
+  --midnight: #12131f;
+  --velvet: #1c1e33;
+  --marquee-gold: #f0b429;
+  --ticket-red: #e2472c;
+  --screen-white: #f5f1e6;
+  --reel-grey: #6b6f8a;
 }
 
-/* TODO(port): replace with the palette and type from movie-league-v2.jsx */
-body {
-  background: radial-gradient(ellipse at top, #1c1917 0%, #09090b 60%) fixed;
-  color: #f4f4f5;
+@theme inline {
+  --color-midnight: var(--midnight);
+  --color-velvet: var(--velvet);
+  --color-gold: var(--marquee-gold);
+  --color-ticket: var(--ticket-red);
+  --color-screen: var(--screen-white);
+  --color-reel: var(--reel-grey);
+  --font-sans: "Inter", -apple-system, sans-serif;
+  --font-display: "Bebas Neue", "Arial Narrow", sans-serif;
+  --font-mono: "Space Mono", monospace;
+}
+
+.ml-root {
+  background: var(--midnight);
+  color: var(--screen-white);
+  font-family: "Inter", -apple-system, sans-serif;
+}
+
+.display { font-family: "Bebas Neue", "Arial Narrow", sans-serif; letter-spacing: 0.04em; font-weight: 400; }
+.mono { font-family: "Space Mono", monospace; }
+.label { font-size: 12px; color: var(--reel-grey); text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* Marquee sign with twinkling bulbs */
+.marquee {
+  position: relative;
+  border: 2px solid var(--marquee-gold);
+  border-radius: 10px;
+  padding: 22px 20px;
+  overflow: hidden;
+  background: rgba(18, 19, 31, 0.78);
+  backdrop-filter: blur(6px);
+}
+.bulb {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--marquee-gold);
+  box-shadow: 0 0 6px 2px rgba(240, 180, 41, 0.6);
+  animation: twinkle 1.6s infinite ease-in-out;
+}
+@keyframes twinkle { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+
+/* Ticket-stub cards */
+.ticket {
+  position: relative;
+  background: var(--velvet);
+  border-radius: 10px;
+  display: flex;
+  overflow: hidden;
+  border: 1px solid rgba(107, 111, 138, 0.35);
+}
+.ticket::before, .ticket::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: var(--midnight);
+  border-radius: 50%;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+.ticket::before { left: -8px; }
+.ticket::after { right: -8px; }
+.stub-divider { border-left: 2px dashed rgba(107, 111, 138, 0.4); }
+
+.card {
+  background: rgba(28, 30, 51, 0.92);
+  border-radius: 10px;
+  border: 1px solid rgba(107, 111, 138, 0.25);
+  backdrop-filter: blur(4px);
+}
+.inset { background: var(--midnight); border: 1px solid rgba(107, 111, 138, 0.3); border-radius: 8px; }
+
+.btn-primary { background: var(--marquee-gold); color: #211a06; font-weight: 700; border-radius: 8px; transition: filter 0.15s; }
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-ghost { border: 1px solid rgba(107, 111, 138, 0.5); color: var(--screen-white); border-radius: 8px; background: transparent; }
+.btn-ghost:hover { border-color: var(--marquee-gold); }
+.btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.field {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--reel-grey);
+  background: var(--midnight);
+  color: var(--screen-white);
+}
+.field:focus { outline: none; border-color: var(--marquee-gold); }
+
+::selection { background: var(--marquee-gold); color: #211a06; }
+
+/* Drifting poster wall behind the app */
+.poster-wall {
+  position: fixed;
+  inset: -10%;
+  z-index: 0;
+  pointer-events: none;
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 7), 1fr);
+  gap: 10px;
+  transform: rotate(-8deg);
+  animation: drift 120s linear infinite alternate;
+}
+.poster-wall img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 6px; }
+@keyframes drift { from { transform: rotate(-8deg) translateY(0); } to { transform: rotate(-8deg) translateY(-18%); } }
+.poster-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at top, rgba(18, 19, 31, 0.55) 0%, rgba(18, 19, 31, 0.92) 55%, var(--midnight) 100%);
+}
+
+/* Backdrop banner behind a card */
+.backdrop-banner { position: relative; overflow: hidden; }
+.backdrop-banner > .bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 25%;
+  opacity: 0.35;
+  transition: opacity 0.6s;
+}
+.backdrop-banner > .bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(28, 30, 51, 0.95) 0%, rgba(28, 30, 51, 0.6) 55%, rgba(28, 30, 51, 0.35) 100%);
+}
+.backdrop-banner > .fg { position: relative; z-index: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .poster-wall, .bulb { animation: none; }
 }

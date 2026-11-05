@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
+import { Film } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Login } from "./Login";
 import { Home } from "./Home";
 import { Join } from "./Join";
 import { League } from "./League";
+import { PosterWall } from "./media";
 import { TmdbAttribution } from "./ui";
 
 // Routes (query-string based so the whole app is one statically-served page):
@@ -50,28 +52,35 @@ export function App() {
   const league = params.get("league");
 
   let body;
-  if (tokenHash) body = <p className="text-zinc-500">Signing you in…</p>;
-  else if (session === undefined) body = <p className="text-zinc-500">Loading…</p>;
+  if (tokenHash) body = <p style={{ color: "var(--reel-grey)" }}>Signing you in…</p>;
+  else if (session === undefined) body = <p style={{ color: "var(--reel-grey)" }}>Loading…</p>;
   else if (!session) body = <Login inviteCode={join} />;
   else if (join) body = <Join code={join} />;
   else if (league) body = <League leagueId={league} />;
   else body = <Home />;
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-6">
-      <header className="mb-6 flex items-center justify-between">
-        <Link href="/" className="text-xl font-black tracking-tight">
-          🎬 Movie <span className="text-amber-400">League</span>
-        </Link>
-        {session && (
-          <button className="text-xs text-zinc-500 hover:text-zinc-300" onClick={() => supabase().auth.signOut()}>
-            Sign out
-          </button>
+    <>
+      <PosterWall intensity={session ? 0.14 : 0.32} />
+      <main className="relative z-10 mx-auto w-full max-w-[720px] px-4 pt-4 pb-16">
+        <header className="mb-4 flex items-center justify-between">
+          <Link href="/" className="display flex items-center gap-2 text-xl" style={{ color: "var(--screen-white)" }}>
+            <Film size={18} color="var(--marquee-gold)" /> Movie <span style={{ color: "var(--marquee-gold)" }}>League</span>
+          </Link>
+          {session && (
+            <button className="mono text-xs" style={{ color: "var(--reel-grey)" }} onClick={() => supabase().auth.signOut()}>
+              sign out
+            </button>
+          )}
+        </header>
+        {linkError && !session && (
+          <p className="mb-4 text-sm" style={{ color: "var(--ticket-red)" }}>
+            {linkError}
+          </p>
         )}
-      </header>
-      {linkError && !session && <p className="mb-4 text-sm text-red-400">{linkError}</p>}
-      {body}
-      <TmdbAttribution />
-    </main>
+        {body}
+        <TmdbAttribution />
+      </main>
+    </>
   );
 }

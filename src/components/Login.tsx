@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Button, Card, ErrorText, Field, inputCls } from "./ui";
+import { ErrorText, Marquee } from "./ui";
 
-// Passwordless email sign-in. The email contains a magic link and (if the Supabase
-// email template includes {{ .Token }}) a 6-digit code — the code is handy on phones
-// where the link opens in a different browser than the one you started in.
+// Passwordless email sign-in: a magic link plus a 6-digit code (handy on phones).
 export function Login({ inviteCode }: { inviteCode: string | null }) {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
@@ -41,37 +39,61 @@ export function Login({ inviteCode }: { inviteCode: string | null }) {
   }
 
   return (
-    <Card className="space-y-4">
-      <h1 className="text-lg font-bold">{inviteCode ? "You've been invited to a Movie League" : "Sign in"}</h1>
-      <p className="text-sm text-zinc-400">No password — we&apos;ll email you a sign-in link.</p>
-      {!sent ? (
-        <form onSubmit={send} className="space-y-3">
-          <Field label="Email">
-            <input className={inputCls} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-          </Field>
-          <Button disabled={busy}>{busy ? "Sending…" : "Email me a link"}</Button>
-        </form>
-      ) : (
-        <form onSubmit={verify} className="space-y-3">
-          <p className="text-sm">
-            Check <b>{email}</b> and tap the link. Or enter the code from the email:
-          </p>
-          <input
-            className={inputCls}
-            inputMode="numeric"
-            placeholder="123456"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-          />
-          <div className="flex gap-2">
-            <Button disabled={busy || code.trim().length < 6}>Verify code</Button>
-            <Button type="button" variant="ghost" onClick={() => setSent(false)}>
-              Use a different email
-            </Button>
+    <div className="mx-auto mt-6 max-w-[400px]">
+      <Marquee>
+        <div className="text-center">
+          <div className="display text-[42px] leading-none" style={{ color: "var(--marquee-gold)" }}>
+            {inviteCode ? "YOU'RE INVITED" : "MOVIE LEAGUE"}
           </div>
-        </form>
-      )}
-      <ErrorText error={error} />
-    </Card>
+          <div className="mt-1 text-[13px]" style={{ color: "var(--reel-grey)" }}>
+            {inviteCode ? "sign in to grab your seat" : "pick it, pitch it, vote it, win it"}
+          </div>
+        </div>
+      </Marquee>
+
+      <div className="card mt-5 p-5">
+        {!sent ? (
+          <form onSubmit={send} className="space-y-3">
+            <div className="label">Step up to the box office</div>
+            <input
+              className="field mono"
+              type="email"
+              required
+              placeholder="you@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <button className="btn-primary w-full px-4 py-3" disabled={busy}>
+              {busy ? "Sending…" : "Email me a sign-in link"}
+            </button>
+            <p className="text-xs" style={{ color: "var(--reel-grey)" }}>
+              No password needed.
+            </p>
+          </form>
+        ) : (
+          <form onSubmit={verify} className="space-y-3">
+            <p className="text-sm">
+              Check <b>{email}</b> and tap the link — or enter the 6-digit code from the email:
+            </p>
+            <input
+              className="field mono text-center text-xl tracking-[0.3em]"
+              inputMode="numeric"
+              placeholder="123456"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+            />
+            <button className="btn-primary w-full px-4 py-3" disabled={busy || code.trim().length < 6}>
+              Verify code
+            </button>
+            <button type="button" className="btn-ghost w-full px-4 py-2 text-sm" onClick={() => setSent(false)}>
+              Use a different email
+            </button>
+          </form>
+        )}
+        <div className="mt-3">
+          <ErrorText error={error} />
+        </div>
+      </div>
+    </div>
   );
 }
