@@ -76,8 +76,8 @@ export function League({ leagueId }: { leagueId: string }) {
           <div className="display text-[32px] leading-none" style={{ color: "var(--marquee-gold)" }}>
             {state.league.name}
           </div>
-          <span className="flex items-center gap-1 text-[13px]" style={{ color: "var(--reel-grey)" }}>
-            <Users size={14} /> {state.members.length}
+          <span className="flex items-center gap-1 text-sm font-semibold" style={{ color: "var(--screen-white)" }}>
+            <Users size={15} /> {state.members.length}
           </span>
         </div>
       </Marquee>
@@ -91,9 +91,9 @@ export function League({ leagueId }: { leagueId: string }) {
               onClick={() => setPage(id)}
               className={`relative flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 text-[13px] ${active ? "font-bold" : "mono"}`}
               style={{
-                border: active ? "1px solid var(--marquee-gold)" : "1px solid rgba(107,111,138,0.3)",
-                background: active ? "rgba(240,180,41,0.12)" : "rgba(18,19,31,0.7)",
-                color: active ? "var(--marquee-gold)" : "var(--reel-grey)",
+                border: active ? "1px solid var(--marquee-gold)" : "1px solid rgba(245,241,230,0.25)",
+                background: active ? "rgba(240,180,41,0.15)" : "rgba(18,19,31,0.85)",
+                color: active ? "var(--marquee-gold)" : "var(--screen-white)",
               }}
             >
               <Icon size={14} /> {label}
