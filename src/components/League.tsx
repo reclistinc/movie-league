@@ -187,9 +187,7 @@ function HomeTab({
           ))}
         </div>
         {state.league.status === "active" && (
-          <p className="mt-3 text-xs" style={{ color: "var(--reel-grey)" }}>
-            Invite more: <InviteLink code={state.league.invite_code} />
-          </p>
+          <InviteLink code={state.league.invite_code} leagueName={state.league.name} />
         )}
       </div>
 

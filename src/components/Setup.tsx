@@ -88,9 +88,7 @@ export function Setup({ state, onChange }: { state: LeagueState; onChange: () =>
           <b style={{ color: "var(--screen-white)" }}>{state.league.vote_budget}</b> points per voter ·{" "}
           {state.league.submission_days}-day picks · {state.league.voting_days}-day voting
         </p>
-        <p className="mt-2 text-sm">
-          Invite: <InviteLink code={state.league.invite_code} />
-        </p>
+        <InviteLink code={state.league.invite_code} leagueName={state.league.name} />
       </div>
 
       <div className="card p-5">
