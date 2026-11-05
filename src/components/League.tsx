@@ -11,6 +11,7 @@ import { Setup } from "./Setup";
 import { RoundPanel } from "./RoundPanel";
 import { RoundResults } from "./Results";
 import { Chat } from "./Chat";
+import { EditMe } from "./EditMe";
 
 type Page = "home" | "round" | "standings" | "chat" | "pastRound";
 
@@ -110,6 +111,7 @@ export function League({ leagueId }: { leagueId: string }) {
         {page === "home" && (
           <HomeTab
             state={state}
+            onChange={refresh}
             goToRound={() => setPage("round")}
             openRound={(id) => {
               setViewingRound(id);
@@ -133,7 +135,17 @@ export function League({ leagueId }: { leagueId: string }) {
   );
 }
 
-function HomeTab({ state, goToRound, openRound }: { state: LeagueState; goToRound: () => void; openRound: (id: string) => void }) {
+function HomeTab({
+  state,
+  onChange,
+  goToRound,
+  openRound,
+}: {
+  state: LeagueState;
+  onChange: () => void;
+  goToRound: () => void;
+  openRound: (id: string) => void;
+}) {
   const live = state.rounds.find((r) => r.status === "submitting" || r.status === "voting");
   const queued = state.rounds.filter((r) => r.status === "queued");
   const done = state.rounds.filter((r) => r.status === "complete").reverse();
@@ -159,7 +171,7 @@ function HomeTab({ state, goToRound, openRound }: { state: LeagueState; goToRoun
         <SectionTitle icon={<Users size={16} color="var(--marquee-gold)" />}>THE LEAGUE</SectionTitle>
         <div className="flex flex-col gap-1.5">
           {state.members.map((m) => (
-            <div key={m.user_id} className="flex items-center gap-2.5 px-1 py-1">
+            <div key={m.user_id} className="flex flex-wrap items-center gap-2.5 px-1 py-1">
               <Avatar avatar={m.avatar} size={28} />
               <span className={m.user_id === state.me ? "font-bold" : ""}>
                 {m.display_name}
@@ -170,6 +182,7 @@ function HomeTab({ state, goToRound, openRound }: { state: LeagueState; goToRoun
                   commish
                 </span>
               )}
+              {m.user_id === state.me && <EditMe state={state} onChange={onChange} />}
             </div>
           ))}
         </div>

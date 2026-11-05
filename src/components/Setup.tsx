@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { THEMES, sampleThemes } from "@/lib/themes";
 import type { LeagueState } from "@/lib/types";
 import { Avatar, ErrorText, InviteLink, Marquee, SectionTitle } from "./ui";
+import { EditMe } from "./EditMe";
 
 type QueueItem = { theme: string; description: string };
 
@@ -79,6 +80,9 @@ export function Setup({ state, onChange }: { state: LeagueState; onChange: () =>
               {m.user_id === state.me && <span style={{ color: "var(--reel-grey)" }}>(you)</span>}
             </span>
           ))}
+        </div>
+        <div className="mt-3 flex flex-wrap items-center">
+          <EditMe state={state} onChange={onChange} label="Edit my name & avatar" />
         </div>
         <p className="mt-4 text-[13px]" style={{ color: "var(--reel-grey)" }}>
           <b style={{ color: "var(--screen-white)" }}>{state.league.vote_budget}</b> points per voter ·{" "}
