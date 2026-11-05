@@ -5,13 +5,28 @@ import { Search, X } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Gif } from "@/lib/types";
 
+// Ask the server once whether GIPHY is configured, so the button only appears when it will work.
+let giphyStatus: Promise<boolean> | null = null;
+function giphyEnabled() {
+  giphyStatus ??= api.searchGifs("").then((r) => r.enabled, () => false);
+  return giphyStatus;
+}
+
 /** Optional: suggest GIPHY GIFs for the chosen movie; the player can attach one to their pick. */
 export function GifPicker({ movieTitle, value, onChange }: { movieTitle: string; value: string | null; onChange: (url: string | null) => void }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(movieTitle);
   const [gifs, setGifs] = useState<Gif[] | null>(null);
-  const [enabled, setEnabled] = useState(true);
+  const [enabled, setEnabled] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    giphyEnabled().then((on) => live && setEnabled(on));
+    return () => {
+      live = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!open || query.trim().length < 2) return;
@@ -20,7 +35,7 @@ export function GifPicker({ movieTitle, value, onChange }: { movieTitle: string;
       api.searchGifs(query).then(
         (r) => {
           if (!live) return;
-          setEnabled(r.enabled);
+          setError(null);
           setGifs(r.results);
         },
         (e) => live && setError(e.message),
