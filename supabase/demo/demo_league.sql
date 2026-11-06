@@ -318,6 +318,7 @@ declare
   holder uuid;
   leader_avatar text;
   mv record;
+  pl uuid;
   all_avatars text[] := array['detective','wizard','astronaut','robot','ghost','alien','cowboy','vampire','ninja','pirate',
                               'hero','scientist','explorer','knight','monster','star','rager','lizard','cyborg','guardian'];
 begin
@@ -356,10 +357,16 @@ begin
             started + make_interval(days => 6 * i))
     returning id into rid;
 
-    insert into public.submissions (round_id, user_id, tmdb_id, title, release_year, created_at)
-    select rid, p.uid, m.tmdb_id, m.title, m.release_year, started + make_interval(days => 6 * (i - 1))
-    from (select uid, row_number() over () as k from unnest(players) uid) p
-    join (select *, row_number() over (order by random()) as k from public._demo_pool()) m on m.k = p.k;
+    -- Each player picks a movie nobody has this round and they haven't picked before in this league.
+    foreach pl in array players loop
+      insert into public.submissions (round_id, user_id, tmdb_id, title, release_year, created_at)
+      select rid, pl, m.tmdb_id, m.title, m.release_year, started + make_interval(days => 6 * (i - 1))
+      from public._demo_pool() m
+      where not exists (select 1 from public.submissions s where s.round_id = rid and s.tmdb_id = m.tmdb_id)
+        and not exists (select 1 from public.submissions s join public.rounds rr on rr.id = s.round_id
+                        where rr.league_id = lid and s.user_id = pl and s.tmdb_id = m.tmdb_id)
+      order by random() limit 1;
+    end loop;
 
     perform public._demo_cast(rid, uid) from unnest(players) uid;
     perform public._snapshot_round(rid);

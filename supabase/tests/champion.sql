@@ -27,6 +27,13 @@ select pg_temp.check((select bool_and(ok) from (
             left join public.votes v on v.submission_id = sub.id group by sub.user_id order by sum(coalesce(v.points,0)) desc limit 1))
          = lower(split_part(l.name, ' — ', 2)) as ok
   from public.leagues l where l.name like 'Champion Demo — %') x), 'each avatar league is won by that avatar');
+select pg_temp.check(not exists (
+  select 1 from public.submissions s join public.rounds r on r.id = s.round_id
+  group by r.league_id, s.user_id, s.tmdb_id having count(*) > 1), 'no player picks the same movie twice in a league');
+select pg_temp.check((select count(*) from public.submissions s join public.rounds r on r.id = s.round_id
+  join public.leagues l on l.id = r.league_id where l.name like 'Champion Demo%') =
+  (select count(*) * 5 from public.rounds r join public.leagues l on l.id = r.league_id where l.name like 'Champion Demo%'),
+  'every player has a pick in every round');
 select public.demo_cleanup();
 select pg_temp.check((select count(*) = 0 from public.leagues), 'cleanup removes champion demos');
 \echo 'CHAMPION TESTS PASSED'
