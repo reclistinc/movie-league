@@ -79,7 +79,7 @@ export function App() {
   else if (!session) body = <Login inviteCode={join} />;
   else if (join) body = <Join code={join} />;
   else if (league) body = <League leagueId={league} />;
-  else if (params.has("watchlist")) body = <Watchlist />;
+  else if (params.has("watchlist")) body = <Watchlist fromLeague={params.get("from")} />;
   else body = <Home />;
 
   return (

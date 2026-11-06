@@ -87,7 +87,7 @@ export function UserMenu({ session, leagueId }: { session: Session; leagueId: st
             type="button"
             onClick={() => {
               setOpen(false);
-              router.push("/?watchlist");
+              router.push(leagueId ? `/?watchlist&from=${leagueId}` : "/?watchlist");
             }}
             className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm hover:bg-white/5"
           >

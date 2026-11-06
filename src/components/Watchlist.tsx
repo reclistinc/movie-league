@@ -9,7 +9,7 @@ import { BackdropCard, TrailerButton, useMovieDetails } from "./media";
 import { Avatar, ErrorText, Marquee, Poster } from "./ui";
 
 /** Every movie you've put on your Watchlist, across all your leagues. */
-export function Watchlist() {
+export function Watchlist({ fromLeague }: { fromLeague?: string | null }) {
   const [items, setItems] = useState<WatchlistItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,8 +38,8 @@ export function Watchlist() {
           </div>
         </div>
       </Marquee>
-      <Link href="/" className="btn-ghost inline-block px-3 py-1.5 text-[13px]">
-        ← Your leagues
+      <Link href={fromLeague ? `/?league=${fromLeague}` : "/"} className="btn-ghost inline-block px-3 py-1.5 text-[13px]">
+        {fromLeague ? "← Back to league" : "← Your leagues"}
       </Link>
       <ErrorText error={error} />
       {items === null && !error && <p style={{ color: "var(--reel-grey)" }}>Loading…</p>}
