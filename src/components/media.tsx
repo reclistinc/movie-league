@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { FastForward, Play, RotateCcw, RotateCw, Volume2, X } from "lucide-react";
+import { Check, FastForward, Play, RotateCcw, RotateCw, Volume2, X } from "lucide-react";
 import type { MovieDetails, MovieVideo, TrendingMovie } from "@/lib/types";
 import { POSTER_BASE } from "@/lib/images";
 
@@ -65,10 +65,30 @@ export function BackdropCard({
 // Trailers & clips (YouTube embeds — played from YouTube, not hosted by us)
 // ---------------------------------------------------------------------------
 
-export function TrailerButton({ tmdbId, title, compact = false }: { tmdbId: number; title: string; compact?: boolean }) {
-  const d = useMovieDetails(tmdbId);
+type ChosenVideo = { video_key?: string | null; video_name?: string | null; video_type?: string | null };
+
+/**
+ * Plays a pick's video. If the player attached one, only that video plays (it's their pitch);
+ * "none" hides the button; older picks without a choice fall back to the movie's trailers.
+ */
+export function TrailerButton({
+  tmdbId,
+  title,
+  compact = false,
+  chosen,
+}: {
+  tmdbId: number;
+  title: string;
+  compact?: boolean;
+  chosen?: ChosenVideo;
+}) {
+  const own = chosen?.video_key ? [{ key: chosen.video_key, name: chosen.video_name ?? title, type: chosen.video_type ?? "Trailer" }] : null;
+  const d = useMovieDetails(own || chosen?.video_type === "none" ? null : tmdbId);
   const [open, setOpen] = useState(false);
-  if (!d || d.videos.length === 0) return null;
+  if (chosen?.video_type === "none") return null;
+  const videos = own ?? d?.videos ?? [];
+  if (videos.length === 0) return null;
+  const label = own ? own[0].type : "Trailer";
   return (
     <>
       <button
@@ -80,10 +100,86 @@ export function TrailerButton({ tmdbId, title, compact = false }: { tmdbId: numb
         className={`btn-ghost inline-flex items-center gap-1.5 ${compact ? "px-2 py-1 text-xs" : "px-3 py-1.5 text-sm"}`}
         style={{ borderColor: "rgba(240,180,41,0.5)", color: "var(--marquee-gold)" }}
       >
-        <Play size={compact ? 12 : 14} fill="currentColor" /> Trailer
+        <Play size={compact ? 12 : 14} fill="currentColor" /> {label}
       </button>
-      {open && <TrailerModal title={title} videos={d.videos} onClose={() => setOpen(false)} />}
+      {open && <TrailerModal title={title} videos={videos} onClose={() => setOpen(false)} />}
     </>
+  );
+}
+
+/** Under the chosen movie: pick which trailer/teaser/clip goes with your submission. */
+export function VideoChooser({
+  tmdbId,
+  title,
+  value,
+  onChange,
+}: {
+  tmdbId: number;
+  title: string;
+  value: MovieVideo | "none" | null;
+  onChange: (v: MovieVideo | "none") => void;
+}) {
+  const d = useMovieDetails(tmdbId);
+  const [preview, setPreview] = useState<MovieVideo | null>(null);
+  const firstVideo = d?.videos[0];
+
+  // Pre-select the movie's main (official) trailer once its videos load.
+  useEffect(() => {
+    if (value === null && firstVideo) onChange(firstVideo);
+  }, [value, firstVideo, onChange]);
+
+  const videos = d?.videos ?? [];
+  if (!d || videos.length === 0) return null;
+  const selectedKey = value && value !== "none" ? value.key : null;
+
+  return (
+    <div>
+      <div className="label mb-2">Video to show voters</div>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {videos.map((v) => {
+          const selected = v.key === selectedKey;
+          return (
+            <div key={v.key} className="w-32 shrink-0">
+              <button type="button" onClick={() => onChange(v)} className="relative block w-full text-left">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`https://i.ytimg.com/vi/${v.key}/mqdefault.jpg`}
+                  alt=""
+                  className="aspect-video w-full rounded object-cover"
+                  style={{ border: selected ? "2px solid var(--marquee-gold)" : "2px solid transparent", opacity: selected ? 1 : 0.7 }}
+                />
+                {selected && (
+                  <span className="absolute top-1 right-1 rounded-full p-0.5" style={{ background: "var(--marquee-gold)", color: "#211a06" }}>
+                    <Check size={12} />
+                  </span>
+                )}
+              </button>
+              <div className="mt-1 flex items-center justify-between gap-1">
+                <span className="mono text-[10px] uppercase" style={{ color: "var(--marquee-gold)" }}>
+                  {v.type}
+                </span>
+                <button type="button" onClick={() => setPreview(v)} className="flex items-center gap-0.5 text-[10px]" style={{ color: "var(--reel-grey)" }}>
+                  <Play size={10} fill="currentColor" /> preview
+                </button>
+              </div>
+              <div className="truncate text-xs">{v.name}</div>
+            </div>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => onChange("none")}
+          className="flex aspect-video w-24 shrink-0 items-center justify-center rounded text-xs"
+          style={{
+            border: value === "none" ? "2px solid var(--marquee-gold)" : "1px dashed rgba(107,111,138,0.6)",
+            color: value === "none" ? "var(--marquee-gold)" : "var(--reel-grey)",
+          }}
+        >
+          No video
+        </button>
+      </div>
+      {preview && <TrailerModal title={title} videos={[preview]} onClose={() => setPreview(null)} />}
+    </div>
   );
 }
 

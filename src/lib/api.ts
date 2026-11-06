@@ -8,6 +8,7 @@ import type {
   LeagueState,
   LeagueSummary,
   Movie,
+  PickVideo,
   VoteInput,
 } from "./types";
 
@@ -55,7 +56,7 @@ export const api = {
   updateMe: (leagueId: string, displayName: string, avatar: string) =>
     rpc<void>("update_my_member", { p_league_id: leagueId, p_display_name: displayName, p_avatar: avatar }),
 
-  submitPick: (roundId: string, movie: Movie, note?: string, gifUrl?: string | null) =>
+  submitPick: (roundId: string, movie: Movie, note?: string, gifUrl?: string | null, video?: PickVideo) =>
     rpc<void>("submit_pick", {
       p_round_id: roundId,
       p_tmdb_id: movie.tmdb_id,
@@ -65,6 +66,11 @@ export const api = {
       p_note: note ?? null,
       // Only sent when a GIF is chosen, so picks keep working before the GIF migration is applied.
       ...(gifUrl ? { p_gif_url: gifUrl } : {}),
+      ...(video === "none"
+        ? { p_video_type: "none" }
+        : video
+          ? { p_video_key: video.key, p_video_name: video.name, p_video_type: video.type }
+          : {}),
     }),
   castVotes: (roundId: string, votes: VoteInput[]) => rpc<void>("cast_votes", { p_round_id: roundId, p_votes: votes }),
 

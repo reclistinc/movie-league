@@ -49,12 +49,18 @@ export interface MySubmission extends Movie {
   round_id: string;
   note: string | null;
   gif_url: string | null;
+  video_key?: string | null;
+  video_name?: string | null;
+  video_type?: string | null;
 }
 
 export interface VotingPick extends Movie {
   id: string;
   note: string | null;
   gif_url?: string | null;
+  video_key?: string | null;
+  video_name?: string | null;
+  video_type?: string | null;
   is_mine: boolean;
 }
 
@@ -80,6 +86,9 @@ export interface ResultPick extends Movie {
   user_id: string;
   note: string | null;
   gif_url?: string | null;
+  video_key?: string | null;
+  video_name?: string | null;
+  video_type?: string | null;
   points: number;
   votes: { voter_id: string; points: number; comment: string | null }[];
 }
@@ -162,3 +171,6 @@ export interface Gif {
   width: number;
   height: number;
 }
+
+/** The video a player attached to a pick: a video, "none" (explicitly no video), or null (older pick). */
+export type PickVideo = MovieVideo | "none" | null;

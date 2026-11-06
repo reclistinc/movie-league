@@ -32,7 +32,7 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
                   picked by {byId[winner.user_id]?.display_name}
                 </div>
                 <div className="mt-2">
-                  <TrailerButton tmdbId={winner.tmdb_id} title={winner.title} />
+                  <TrailerButton tmdbId={winner.tmdb_id} title={winner.title} chosen={winner} />
                 </div>
               </div>
             </div>
@@ -70,7 +70,7 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
               <div className="mt-1 flex items-center gap-2 text-[13px]" style={{ color: "var(--reel-grey)" }}>
                 <Avatar avatar={m?.avatar ?? ""} size={18} /> picked by {m?.display_name}
                 <span className="ml-auto">
-                  <TrailerButton tmdbId={p.tmdb_id} title={p.title} compact />
+                  <TrailerButton tmdbId={p.tmdb_id} title={p.title} compact chosen={p} />
                 </span>
               </div>
               {p.note && <div className="mt-1 text-[13px]">{p.note}</div>}

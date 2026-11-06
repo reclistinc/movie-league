@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, Clapperboard, Lock, Ticket } from "lucide-react";
 import { api } from "@/lib/api";
-import type { LeagueState, Movie, Round, VotingPick } from "@/lib/types";
-import { BackdropCard, TrailerButton, useMovieDetails } from "./media";
+import type { LeagueState, Movie, PickVideo, Round, VotingPick } from "@/lib/types";
+import { BackdropCard, TrailerButton, VideoChooser, useMovieDetails } from "./media";
 import { RoundResults } from "./Results";
 import { matchTier, rankMovies } from "@/lib/rank";
 import { GifPicker, PickGif } from "./GifPicker";
@@ -111,6 +111,7 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
   const [searching, setSearching] = useState(false);
   const [chosen, setChosen] = useState<Movie | null>(null);
   const [gifUrl, setGifUrl] = useState<string | null>(null);
+  const [video, setVideo] = useState<PickVideo>(null); // null until the movie's videos load (then main trailer)
   const [note, setNote] = useState(""); // starts empty; your saved pick + note stay untouched until you confirm
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -150,10 +151,11 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
     setBusy(true);
     setError(null);
     try {
-      await api.submitPick(round.id, chosen, note, gifUrl);
+      await api.submitPick(round.id, chosen, note, gifUrl, video);
       setEditing(false);
       setChosen(null);
       setGifUrl(null);
+      setVideo(null);
       setNote("");
       setQuery("");
       onChange();
@@ -188,7 +190,7 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
               {mine.note && <p className="mt-2 text-sm italic">&ldquo;{mine.note}&rdquo;</p>}
               <PickGif url={mine.gif_url} />
               <div className="mt-3 flex flex-wrap gap-2">
-                <TrailerButton tmdbId={mine.tmdb_id} title={mine.title} />
+                <TrailerButton tmdbId={mine.tmdb_id} title={mine.title} chosen={mine} />
                 <button onClick={() => setEditing(true)} className="btn-ghost px-3 py-1.5 text-sm">
                   Change my submission
                 </button>
@@ -216,8 +218,10 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
             onClear={() => {
               setChosen(null);
               setGifUrl(null);
+              setVideo(null);
             }}
           />
+          <VideoChooser key={`v${chosen.tmdb_id}`} tmdbId={chosen.tmdb_id} title={chosen.title} value={video} onChange={setVideo} />
           <GifPicker key={chosen.tmdb_id} movieTitle={chosen.title} value={gifUrl} onChange={setGifUrl} />
         </>
       ) : (
@@ -231,7 +235,7 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
           {shown.length > 0 && (
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
               {shown.map((m) => (
-                <button key={m.tmdb_id} onClick={() => setChosen(m)} className="group flex flex-col items-center gap-1.5 text-center">
+                <button key={m.tmdb_id} onClick={() => { setChosen(m); setVideo(null); }} className="group flex flex-col items-center gap-1.5 text-center">
                   <div className="transition group-hover:scale-[1.03]">
                     <Poster movie={m} width={100} />
                   </div>
@@ -270,6 +274,7 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
               setEditing(false);
               setChosen(null);
               setGifUrl(null);
+              setVideo(null);
               setNote("");
             }}
             className="btn-ghost px-5 py-2.5"
@@ -452,7 +457,7 @@ function PickTicket({ pick, children }: { pick: VotingPick; children: React.Reac
                   {pick.release_year}
                 </span>
               </div>
-              <TrailerButton tmdbId={pick.tmdb_id} title={pick.title} compact />
+              <TrailerButton tmdbId={pick.tmdb_id} title={pick.title} compact chosen={pick} />
             </div>
             {pick.note && (
               <div className="mt-1 text-[13px]" style={{ color: "var(--reel-grey)" }}>
