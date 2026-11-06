@@ -13,7 +13,11 @@ select public.get_player_card(:'lid', :'champ') as c \gset
 \echo :c
 select pg_temp.check(((:'c'::jsonb)->'league'->>'finish')::int = 1, 'champion finishes 1st');
 select pg_temp.check(jsonb_array_length((:'c'::jsonb)->'league'->'picks') = ((:'c'::jsonb)->'league'->>'rounds_complete')::int, 'a pick per finished round');
-select pg_temp.check(((:'c'::jsonb)->'career'->>'leagues')::int = 2, 'career counts both leagues');
+reset role;
+select count(*) as nleagues from public.league_members where user_id = :'champ' \gset
+set role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000aa', false);
+select pg_temp.check(((:'c'::jsonb)->'career'->>'leagues')::int = :nleagues, 'career counts every league they are in');
 select pg_temp.check(((:'c'::jsonb)->'career'->>'titles')::int >= 1, 'title counted');
 select pg_temp.check((:'c'::jsonb)->'league'->'biggest_fan'->>'user_id' is not null, 'biggest fan found');
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000ee', false);
