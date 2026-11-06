@@ -6,8 +6,8 @@ import { Check, Copy, Share2 } from "lucide-react";
 const noopSubscribe = () => () => {};
 
 /**
- * A shimmering gold movie ticket labelled INVITE. Tap it and it flips over with a burst of
- * sparkles to reveal the invite code, Copy link and Share. Tap the ticket again to flip back.
+ * A small shimmering gold movie ticket labelled INVITE (sits in a header). Tap it and it flips
+ * over with a burst of sparkles to reveal the invite code with Copy and Share. Tap again to flip back.
  */
 export function InviteLink({ code, leagueName }: { code: string; leagueName?: string }) {
   const [flipped, setFlipped] = useState(false);
@@ -24,7 +24,7 @@ export function InviteLink({ code, leagueName }: { code: string; leagueName?: st
   };
 
   return (
-    <div className="invite-scene mt-4">
+    <div className="invite-scene shrink-0" onClick={(e) => e.stopPropagation()}>
       <div
         role="button"
         tabIndex={0}
@@ -33,76 +33,70 @@ export function InviteLink({ code, leagueName }: { code: string; leagueName?: st
         onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), flip())}
         className={`invite-card ${flipped ? "is-flipped" : ""}`}
       >
-        {/* FRONT: the gold ticket */}
+        {/* FRONT: tiny gold ticket */}
         <div className="invite-face invite-front">
           <span className="invite-shine" aria-hidden />
           <span className="invite-notch left" aria-hidden />
           <span className="invite-notch right" aria-hidden />
-          <div className="invite-stub mono">
-            <span>ADMIT</span>
-            <span>ONE</span>
+          <div className="invite-stub" aria-hidden>
+            ✦
           </div>
           <div className="invite-main">
-            <div className="mono text-[8px] tracking-[0.3em]">✦ YOU&apos;RE HOLDING AN ✦</div>
-            <div className="display text-[32px] leading-none tracking-[0.12em]">INVITE</div>
-            <div className="mono max-w-full truncate text-[8px] tracking-[0.2em] uppercase">to {name}</div>
+            <div className="display text-[22px] leading-none tracking-[0.14em]">INVITE</div>
           </div>
-          <div className="invite-tap mono">tap to reveal</div>
-          {[12, 30, 58, 77, 90].map((left, i) => (
-            <span key={i} className="invite-sparkle" style={{ left: `${left}%`, top: `${[22, 70, 18, 64, 30][i]}%`, animationDelay: `${i * 0.35}s` }} aria-hidden>
+          {[20, 82].map((left, i) => (
+            <span key={i} className="invite-sparkle" style={{ left: `${left}%`, top: `${[18, 58][i]}%`, animationDelay: `${i * 0.6}s` }} aria-hidden>
               ✦
             </span>
           ))}
         </div>
 
-        {/* BACK: the code + actions */}
+        {/* BACK: code + copy + share */}
         <div className="invite-face invite-back">
-          <div className="text-center">
-            <div className="label text-[10px]">Invite code</div>
-            <div className="mono text-lg leading-tight tracking-[0.18em]" style={{ color: "var(--marquee-gold)" }}>
-              {code}
-            </div>
-          </div>
-          <div className="mt-1.5 flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+          <span className="mono text-[11px] tracking-[0.08em]" style={{ color: "var(--marquee-gold)" }}>
+            {code}
+          </span>
+          <span className="flex gap-1" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
+              aria-label="Copy invite link"
+              title="Copy invite link"
               onClick={() => {
                 navigator.clipboard?.writeText(url());
                 setCopied(true);
                 setTimeout(() => setCopied(false), 1500);
               }}
-              className="btn-primary flex items-center gap-1.5 px-3 py-1.5 text-xs whitespace-nowrap"
+              className="btn-primary flex h-[26px] w-[26px] items-center justify-center p-0"
             >
-              {copied ? <Check size={13} /> : <Copy size={13} />} {copied ? "Copied" : "Copy link"}
+              {copied ? <Check size={13} /> : <Copy size={13} />}
             </button>
             {canShare && (
               <button
                 type="button"
+                aria-label="Share invite"
+                title="Share invite"
                 onClick={() => navigator.share({ title: name, text: `Join ${name} on Movie League!`, url: url() }).catch(() => {})}
-                className="btn-ghost flex items-center gap-1.5 px-3 py-1.5 text-xs whitespace-nowrap"
+                className="btn-ghost flex h-[26px] w-[26px] items-center justify-center p-0"
               >
-                <Share2 size={13} /> Share
+                <Share2 size={13} />
               </button>
             )}
-          </div>
-          <div className="mono mt-1 text-center text-[9px]" style={{ color: "var(--reel-grey)" }}>
-            tap the ticket to flip it back
-          </div>
+          </span>
         </div>
       </div>
 
       {/* Sparkle burst on every flip */}
       {burst > 0 && (
         <div key={burst} className="invite-burst" aria-hidden>
-          {Array.from({ length: 16 }).map((_, i) => {
-            const angle = (i / 16) * Math.PI * 2;
-            const dist = 50 + (i % 3) * 20;
+          {Array.from({ length: 12 }).map((_, i) => {
+            const angle = (i / 12) * Math.PI * 2;
+            const dist = 26 + (i % 3) * 10;
             return (
               <span
                 key={i}
                 style={
                   {
-                    "--dx": `${Math.cos(angle) * dist * 1.8}px`,
+                    "--dx": `${Math.cos(angle) * dist * 2.2}px`,
                     "--dy": `${Math.sin(angle) * dist}px`,
                     animationDelay: `${(i % 4) * 0.04}s`,
                     color: ["#f9e27a", "#fff", "#f0b429"][i % 3],

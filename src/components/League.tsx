@@ -80,13 +80,16 @@ export function League({ leagueId }: { leagueId: string }) {
   return (
     <div>
       <Marquee>
-        <div className="flex flex-wrap items-center justify-between gap-2.5">
-          <div className="display text-[32px] leading-none" style={{ color: "var(--marquee-gold)" }}>
-            {state.league.name}
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="display text-[32px] leading-none" style={{ color: "var(--marquee-gold)" }}>
+              {state.league.name}
+            </div>
+            <span className="mt-1 flex items-center gap-1 text-sm font-semibold" style={{ color: "var(--screen-white)" }}>
+              <Users size={15} /> {state.members.length} players
+            </span>
           </div>
-          <span className="flex items-center gap-1 text-sm font-semibold" style={{ color: "var(--screen-white)" }}>
-            <Users size={15} /> {state.members.length}
-          </span>
+          {state.league.status === "active" && <InviteLink code={state.league.invite_code} leagueName={state.league.name} />}
         </div>
       </Marquee>
 
@@ -182,9 +185,6 @@ function HomeTab({
             </div>
           ))}
         </div>
-        {state.league.status === "active" && (
-          <InviteLink code={state.league.invite_code} leagueName={state.league.name} />
-        )}
       </div>
 
       <div className="card p-4">

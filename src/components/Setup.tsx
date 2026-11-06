@@ -72,7 +72,13 @@ export function Setup({ state, onChange }: { state: LeagueState; onChange: () =>
       </Marquee>
 
       <div className="card p-5">
-        <SectionTitle icon={<Users size={16} color="var(--marquee-gold)" />}>IN THE LOBBY</SectionTitle>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Users size={16} color="var(--marquee-gold)" />
+            <span className="display text-lg tracking-[0.06em]">IN THE LOBBY</span>
+          </div>
+          <InviteLink code={state.league.invite_code} leagueName={state.league.name} />
+        </div>
         <div className="flex flex-wrap gap-3">
           {state.members.map((m) => (
             <span key={m.user_id} className="flex items-center gap-2 text-sm">
@@ -88,7 +94,6 @@ export function Setup({ state, onChange }: { state: LeagueState; onChange: () =>
           <b style={{ color: "var(--screen-white)" }}>{state.league.vote_budget}</b> points per voter ·{" "}
           {state.league.submission_days}-day picks · {state.league.voting_days}-day voting
         </p>
-        <InviteLink code={state.league.invite_code} leagueName={state.league.name} />
       </div>
 
       <div className="card p-5">

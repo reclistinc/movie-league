@@ -167,22 +167,22 @@
   .confetti { display: none; }
 }
 
-/* ---- Golden INVITE ticket ---- */
-.invite-scene { position: relative; perspective: 1100px; max-width: 340px; margin-left: auto; margin-right: auto; }
+/* ---- Golden INVITE ticket (header badge) ---- */
+.invite-scene { position: relative; perspective: 600px; width: 142px; }
 .invite-card {
   position: relative;
-  height: 104px;
+  height: 40px;
   cursor: pointer;
   transform-style: preserve-3d;
-  transition: transform 0.9s cubic-bezier(0.2, 0.9, 0.25, 1.15);
+  transition: transform 0.85s cubic-bezier(0.2, 0.9, 0.25, 1.15);
   -webkit-tap-highlight-color: transparent;
 }
 .invite-card.is-flipped { transform: rotateY(180deg); }
-.invite-card:focus-visible { outline: 2px solid var(--marquee-gold); outline-offset: 4px; border-radius: 12px; }
+.invite-card:focus-visible { outline: 2px solid var(--marquee-gold); outline-offset: 3px; border-radius: 8px; }
 .invite-face {
   position: absolute;
   inset: 0;
-  border-radius: 12px;
+  border-radius: 7px;
   overflow: hidden;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -192,62 +192,48 @@
   align-items: stretch;
   color: #3a2a05;
   background: linear-gradient(115deg, #7a5a0c 0%, #e8c25a 18%, #fff3b8 32%, #d9a826 48%, #f7df8a 64%, #b98a14 82%, #f3d27a 100%);
-  box-shadow: 0 8px 24px rgba(240, 180, 41, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.35), inset 0 0 0 5px rgba(122, 90, 12, 0.35);
+  box-shadow: 0 4px 14px rgba(240, 180, 41, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.35), inset 0 0 0 3px rgba(122, 90, 12, 0.3);
 }
 .invite-back {
   transform: rotateY(180deg);
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 6px 12px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 5px 0 9px;
   background: radial-gradient(ellipse at center, #26294a 0%, var(--velvet) 70%);
   border: 1.5px solid var(--marquee-gold);
-  box-shadow: 0 0 28px rgba(240, 180, 41, 0.3);
+  box-shadow: 0 0 16px rgba(240, 180, 41, 0.3);
 }
 .invite-notch {
   position: absolute;
   top: 50%;
-  width: 16px;
-  height: 16px;
-  margin-top: -8px;
+  width: 10px;
+  height: 10px;
+  margin-top: -5px;
   border-radius: 50%;
-  background: var(--velvet);
+  background: var(--midnight);
   z-index: 2;
 }
-.invite-notch.left { left: -8px; }
-.invite-notch.right { right: -8px; }
+.invite-notch.left { left: -5px; }
+.invite-notch.right { right: -5px; }
 .invite-stub {
-  width: 50px;
+  width: 26px;
   flex-shrink: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  border-right: 2px dashed rgba(58, 42, 5, 0.45);
+  font-size: 11px;
+  border-right: 1.5px dashed rgba(58, 42, 5, 0.45);
 }
 .invite-main {
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: 0 10px;
+  padding-right: 6px;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
-}
-.invite-tap {
-  position: absolute;
-  bottom: 4px;
-  right: 10px;
-  font-size: 8px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  opacity: 0.7;
 }
 .invite-shine {
   position: absolute;
@@ -261,7 +247,7 @@
 @keyframes invite-shine { 0%, 55% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
 .invite-sparkle {
   position: absolute;
-  font-size: 12px;
+  font-size: 9px;
   color: #fffbe6;
   text-shadow: 0 0 6px rgba(255, 255, 255, 0.9);
   animation: twinkle 1.8s infinite ease-in-out;
@@ -271,7 +257,7 @@
 .invite-burst { position: absolute; left: 50%; top: 50%; pointer-events: none; z-index: 20; }
 .invite-burst span {
   position: absolute;
-  font-size: 14px;
+  font-size: 11px;
   text-shadow: 0 0 8px rgba(255, 230, 140, 0.95);
   opacity: 0;
   animation: invite-burst 0.95s ease-out forwards;
