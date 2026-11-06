@@ -177,7 +177,10 @@ export function TmdbAttribution() {
       <a href="https://www.themoviedb.org/" className="underline" target="_blank" rel="noreferrer">
         The Movie Database (TMDB)
       </a>
-      . This product uses the TMDB API but is not endorsed or certified by TMDB. Trailers play from YouTube.
+      . This product uses the TMDB API but is not endorsed or certified by TMDB. Trailers play from YouTube. ·{" "}
+      <a href="/privacy" className="underline">
+        Privacy
+      </a>
     </p>
   );
 }
