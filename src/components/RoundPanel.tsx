@@ -1,5 +1,6 @@
 "use client";
 
+import { Countdown } from "./Countdown";
 import { useEffect, useMemo, useState } from "react";
 import { Check, Clapperboard, Lock, Ticket } from "lucide-react";
 import { api } from "@/lib/api";
@@ -8,7 +9,7 @@ import { BackdropCard, TrailerButton, VideoChooser, useMovieDetails } from "./me
 import { RoundResults } from "./Results";
 import { matchTier, rankMovies } from "@/lib/rank";
 import { GifPicker, PickGif } from "./GifPicker";
-import { ErrorText, Poster, timeLeft } from "./ui";
+import { ErrorText, Poster } from "./ui";
 
 export function RoundPanel({ state, onChange }: { state: LeagueState; onChange: () => void }) {
   const round = state.rounds.find((r) => r.id === state.current?.round_id);
@@ -46,7 +47,7 @@ export function RoundPanel({ state, onChange }: { state: LeagueState; onChange: 
           Hi {me?.display_name} — {voting ? "you haven't voted on this round yet." : "you haven't submitted a movie yet."}
         </p>
         <p className="mono mt-1 text-xs" style={{ color: "var(--reel-grey)" }}>
-          {voting ? "Voting" : "Submissions"} {timeLeft(voting ? round.voting_deadline : round.submission_deadline)}
+          {voting ? "Voting" : "Submissions"} <Countdown to={voting ? round.voting_deadline : round.submission_deadline} />
         </p>
         <button onClick={() => setGateDismissed(gateKey)} className="btn-primary mt-5 px-6 py-3">
           {voting ? "Begin Voting" : "Start My Submission"}
@@ -79,8 +80,6 @@ export function RoundPanel({ state, onChange }: { state: LeagueState; onChange: 
 function ThemeHeader({ round }: { round: Round }) {
   const voting = round.status === "voting";
   const deadline = voting ? round.voting_deadline : round.submission_deadline;
-  const left = timeLeft(deadline);
-  const late = left === "Deadline passed";
   return (
     <div className="card p-5">
       <div className="label">{voting ? "Voting now" : "Now showing"} · round {round.position} theme</div>
@@ -92,8 +91,8 @@ function ThemeHeader({ round }: { round: Round }) {
           {round.description}
         </p>
       )}
-      <p className="mono mt-1 text-xs" style={{ color: late ? "var(--ticket-red)" : "var(--reel-grey)" }}>
-        {voting ? "Voting" : "Submissions"} {left}
+      <p className="mono mt-1 text-xs" style={{ color: "var(--reel-grey)" }}>
+        {voting ? "Voting" : "Submissions"} <Countdown to={deadline} />
       </p>
     </div>
   );

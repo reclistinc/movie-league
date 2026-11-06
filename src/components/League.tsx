@@ -1,12 +1,13 @@
 "use client";
 
+import { Countdown } from "./Countdown";
 import { useCallback, useEffect, useState } from "react";
 import { Check, ChevronRight, Clapperboard, Ticket, Trophy, Users } from "lucide-react";
 import { api } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import type { LeagueState, Round } from "@/lib/types";
 import { BackdropCard } from "./media";
-import { Avatar, ErrorText, InviteLink, Marquee, SectionTitle, memberMap, timeLeft } from "./ui";
+import { Avatar, ErrorText, InviteLink, Marquee, SectionTitle, memberMap } from "./ui";
 import { Setup } from "./Setup";
 import { RoundPanel } from "./RoundPanel";
 import { RoundResults } from "./Results";
@@ -268,7 +269,7 @@ function LiveRound({ round, state, onOpen }: { round: Round; state: LeagueState;
           {round.theme}
         </div>
         <div className="mono mb-2.5 text-xs" style={{ color: "var(--reel-grey)" }}>
-          {submitting ? "Submissions" : "Voting"} {timeLeft(deadline)}
+          {submitting ? "Submissions" : "Voting"} <Countdown to={deadline} />
         </div>
       </button>
       <div className="flex flex-col gap-1.5">

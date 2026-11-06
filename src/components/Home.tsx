@@ -1,12 +1,13 @@
 "use client";
 
+import { Countdown } from "./Countdown";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Clapperboard, Plus, Ticket } from "lucide-react";
 import { api } from "@/lib/api";
 import type { LeagueSummary } from "@/lib/types";
-import { AvatarPicker, ErrorText, Field, Marquee, SectionTitle, timeLeft } from "./ui";
+import { AvatarPicker, ErrorText, Field, Marquee, SectionTitle } from "./ui";
 
 export function Home() {
   const router = useRouter();
@@ -59,7 +60,7 @@ export function Home() {
             {l.live_round && (
               <p className="mono mt-1 text-xs">
                 “{l.live_round.theme}” — {l.live_round.status === "submitting" ? "picks open" : "voting open"} ·{" "}
-                {timeLeft(l.live_round.deadline)}
+                <Countdown to={l.live_round.deadline} />
               </p>
             )}
           </div>

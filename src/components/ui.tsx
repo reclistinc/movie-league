@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore, type ReactNode } from "react";
-import { Check, Copy, Share2, Ticket } from "lucide-react";
+import type { ReactNode } from "react";
 import { AVATAR_MAP, AVATAR_OPTIONS, CharacterFace, GeneratedPoster } from "./art";
 import type { Member, Movie } from "@/lib/types";
 
@@ -158,18 +157,6 @@ export function memberMap(members: Member[]) {
   return Object.fromEntries(members.map((m) => [m.user_id, m]));
 }
 
-/** "4d 3h left" / "2h 15m left", as in the prototype. */
-export function timeLeft(iso: string | null): string {
-  if (!iso) return "";
-  const diff = new Date(iso).getTime() - Date.now();
-  if (diff <= 0) return "Deadline passed";
-  const DAY = 86_400_000;
-  const days = Math.floor(diff / DAY);
-  const hours = Math.floor((diff % DAY) / 3_600_000);
-  if (days > 0) return `${days}d ${hours}h left`;
-  return `${hours}h ${Math.floor((diff % 3_600_000) / 60_000)}m left`;
-}
-
 export function TmdbAttribution() {
   return (
     <p className="mt-10 text-center text-[11px]" style={{ color: "var(--reel-grey)" }}>
@@ -185,57 +172,4 @@ export function TmdbAttribution() {
   );
 }
 
-const noopSubscribe = () => () => {};
-
-/** Ticket-style invite: the code, plus Copy link and (on phones) Share. */
-export function InviteLink({ code, leagueName }: { code: string; leagueName?: string }) {
-  const [copied, setCopied] = useState(false);
-  // Same answer on server and first client render (false), then the real one — no hydration mismatch.
-  const canShare = useSyncExternalStore(
-    noopSubscribe,
-    () => typeof navigator.share === "function",
-    () => false,
-  );
-  const url = () => `${window.location.origin}/?join=${code}`;
-
-  return (
-    <div
-      className="inset mt-3 flex flex-wrap items-center gap-x-3 gap-y-2.5 px-3 py-2.5"
-      style={{ borderStyle: "dashed", borderColor: "rgba(240,180,41,0.45)" }}
-    >
-      <div className="flex min-w-[150px] flex-1 items-center gap-2.5">
-        <Ticket size={18} color="var(--marquee-gold)" className="shrink-0" />
-        <div>
-          <div className="label text-[10px] whitespace-nowrap">Invite code</div>
-          <div className="mono text-lg leading-tight tracking-[0.12em] whitespace-nowrap" style={{ color: "var(--marquee-gold)" }}>
-            {code}
-          </div>
-        </div>
-      </div>
-      <div className="flex gap-2">
-        {canShare && (
-          <button
-            type="button"
-            onClick={() =>
-              navigator.share({ title: leagueName ?? "Movie League", text: `Join ${leagueName ?? "my Movie League"}!`, url: url() }).catch(() => {})
-            }
-            className="btn-ghost flex items-center gap-1.5 px-3 py-1.5 text-xs whitespace-nowrap"
-          >
-            <Share2 size={13} /> Share
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard?.writeText(url());
-            setCopied(true);
-            setTimeout(() => setCopied(false), 1500);
-          }}
-          className="btn-primary flex items-center gap-1.5 px-3 py-1.5 text-xs whitespace-nowrap"
-        >
-          {copied ? <Check size={13} /> : <Copy size={13} />} {copied ? "Copied" : "Copy link"}
-        </button>
-      </div>
-    </div>
-  );
-}
+export { InviteLink } from "./InviteTicket";
