@@ -285,3 +285,8 @@ select.field {
   color: var(--screen-white);
 }
 select.field option { background: #000; color: var(--screen-white); }
+
+/* Tappable player avatars/names → player card */
+.player-link { cursor: pointer; border-radius: 999px; transition: opacity 0.15s; }
+.player-link:hover { opacity: 0.8; }
+.player-link:focus-visible { outline: 2px solid var(--marquee-gold); outline-offset: 2px; }

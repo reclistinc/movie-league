@@ -6,6 +6,7 @@ import { roundCaption } from "@/lib/themes";
 import { BackdropCard, TrailerButton } from "./media";
 import { Avatar, Poster, memberMap } from "./ui";
 import { PickGif } from "./GifPicker";
+import { PlayerLink } from "./PlayerCard";
 
 /** Full breakdown of a finished round: winner hero + ranked ticket stubs with votes and comments. */
 export function RoundResults({ round, picks, state }: { round: Round; picks: ResultPick[]; state: LeagueState }) {
@@ -34,8 +35,10 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
                 </div>
                 <div className="display text-3xl leading-tight">{winner.title}</div>
                 <div className="mt-1 flex items-center gap-2 text-sm">
-                  <Avatar avatar={byId[winner.user_id]?.avatar ?? ""} size={22} />
-                  picked by {byId[winner.user_id]?.display_name ?? "Former player"}
+                  <PlayerLink userId={winner.user_id}>
+                    <Avatar avatar={byId[winner.user_id]?.avatar ?? ""} size={22} />
+                    picked by {byId[winner.user_id]?.display_name ?? "Former player"}
+                  </PlayerLink>
                 </div>
                 <div className="mt-2">
                   <TrailerButton tmdbId={winner.tmdb_id} title={winner.title} chosen={winner} />
@@ -76,7 +79,9 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
                 </span>
               </div>
               <div className="mt-1 flex items-center gap-2 text-[13px]" style={{ color: "var(--reel-grey)" }}>
-                <Avatar avatar={m?.avatar ?? ""} size={18} /> picked by {m?.display_name ?? "Former player"}
+                <PlayerLink userId={p.user_id}>
+                  <Avatar avatar={m?.avatar ?? ""} size={18} /> picked by {m?.display_name ?? "Former player"}
+                </PlayerLink>
                 <span className="ml-auto">
                   <TrailerButton tmdbId={p.tmdb_id} title={p.title} compact chosen={p} />
                 </span>

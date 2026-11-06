@@ -9,6 +9,7 @@ import type {
   LeagueSummary,
   Movie,
   PickVideo,
+  PlayerCard,
   VoteInput,
 } from "./types";
 
@@ -20,6 +21,8 @@ async function rpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T
 
 export const api = {
   myLeagues: () => rpc<LeagueSummary[]>("my_leagues"),
+  playerCard: (leagueId: string, userId: string) =>
+    rpc<PlayerCard>("get_player_card", { p_league_id: leagueId, p_user_id: userId }),
   leagueState: (leagueId: string) => rpc<LeagueState>("get_league_state", { p_league_id: leagueId }),
 
   createLeague: (a: {

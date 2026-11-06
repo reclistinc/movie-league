@@ -7,6 +7,7 @@ import { THEMES } from "@/lib/themes";
 import type { LeagueState } from "@/lib/types";
 import { Avatar, ErrorText, InviteLink, Marquee, SectionTitle } from "./ui";
 import { CommissionerTools } from "./CommissionerTools";
+import { PlayerLink } from "./PlayerCard";
 
 type QueueItem = { theme: string; description: string };
 
@@ -82,10 +83,10 @@ export function Setup({ state, onChange }: { state: LeagueState; onChange: () =>
         </div>
         <div className="flex flex-wrap gap-3">
           {state.members.map((m) => (
-            <span key={m.user_id} className="flex items-center gap-2 text-sm">
+            <PlayerLink key={m.user_id} userId={m.user_id} className="text-sm">
               <Avatar avatar={m.avatar} size={30} /> {m.display_name}
               {m.user_id === state.me && <span style={{ color: "var(--reel-grey)" }}>(you)</span>}
-            </span>
+            </PlayerLink>
           ))}
         </div>
         <p className="mt-4 text-[13px]" style={{ color: "var(--reel-grey)" }}>

@@ -15,6 +15,7 @@ import { RoundResults } from "./Results";
 import { Chat } from "./Chat";
 import { CommissionerTools } from "./CommissionerTools";
 import { ChampionCard } from "./Champion";
+import { PlayerCardProvider, PlayerLink } from "./PlayerCard";
 
 type Page = "home" | "round" | "standings" | "chat" | "pastRound";
 
@@ -59,7 +60,12 @@ export function League({ leagueId }: { leagueId: string }) {
 
   if (error && !state) return <ErrorText error={error} />;
   if (!state) return <p style={{ color: "var(--reel-grey)" }}>Loading league…</p>;
-  if (state.league.status === "setup") return <Setup state={state} onChange={refresh} />;
+  if (state.league.status === "setup")
+    return (
+      <PlayerCardProvider leagueId={leagueId} members={state.members} me={state.me}>
+        <Setup state={state} onChange={refresh} />
+      </PlayerCardProvider>
+    );
 
   const live = state.rounds.find((r) => r.status === "submitting" || r.status === "voting");
   const cur = state.current;
@@ -79,70 +85,72 @@ export function League({ leagueId }: { leagueId: string }) {
   const viewing = viewingRound ? state.rounds.find((r) => r.id === viewingRound) : null;
 
   return (
-    <div>
-      <Marquee>
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="display text-[32px] leading-none" style={{ color: "var(--marquee-gold)" }}>
-              {state.league.name}
+    <PlayerCardProvider leagueId={leagueId} members={state.members} me={state.me}>
+      <div>
+        <Marquee>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="display text-[32px] leading-none" style={{ color: "var(--marquee-gold)" }}>
+                {state.league.name}
+              </div>
+              <span className="mt-1 flex items-center gap-1 text-sm font-semibold" style={{ color: "var(--screen-white)" }}>
+                <Users size={15} /> {state.members.length} players
+              </span>
             </div>
-            <span className="mt-1 flex items-center gap-1 text-sm font-semibold" style={{ color: "var(--screen-white)" }}>
-              <Users size={15} /> {state.members.length} players
-            </span>
+            {state.league.status === "active" && <InviteLink code={state.league.invite_code} leagueName={state.league.name} />}
           </div>
-          {state.league.status === "active" && <InviteLink code={state.league.invite_code} leagueName={state.league.name} />}
-        </div>
-      </Marquee>
+        </Marquee>
 
-      <nav className="mt-3.5 flex gap-1.5">
-        {tabs.map(({ id, label, Icon }) => {
-          const active = page === id || (id === "home" && page === "pastRound");
-          return (
-            <button
-              key={id}
-              onClick={() => setPage(id)}
-              className={`relative flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 text-[13px] ${active ? "font-bold" : "mono"}`}
-              style={{
-                border: active ? "1px solid var(--marquee-gold)" : "1px solid rgba(245,241,230,0.25)",
-                background: active ? "rgba(240,180,41,0.15)" : "rgba(18,19,31,0.85)",
-                color: active ? "var(--marquee-gold)" : "var(--screen-white)",
+        <nav className="mt-3.5 flex gap-1.5">
+          {tabs.map(({ id, label, Icon }) => {
+            const active = page === id || (id === "home" && page === "pastRound");
+            return (
+              <button
+                key={id}
+                onClick={() => setPage(id)}
+                className={`relative flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 text-[13px] ${active ? "font-bold" : "mono"}`}
+                style={{
+                  border: active ? "1px solid var(--marquee-gold)" : "1px solid rgba(245,241,230,0.25)",
+                  background: active ? "rgba(240,180,41,0.15)" : "rgba(18,19,31,0.85)",
+                  color: active ? "var(--marquee-gold)" : "var(--screen-white)",
+                }}
+              >
+                <Icon size={14} /> {label}
+                {id === "round" && myActionNeeded && (
+                  <span className="absolute top-1 right-1.5 h-2 w-2 rounded-full" style={{ background: "var(--ticket-red)" }} />
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="mt-4">
+          <ErrorText error={error} />
+          {page === "home" && (
+            <HomeTab
+              state={state}
+              onChange={refresh}
+              goToRound={() => setPage("round")}
+              openRound={(id) => {
+                setViewingRound(id);
+                setPage("pastRound");
               }}
-            >
-              <Icon size={14} /> {label}
-              {id === "round" && myActionNeeded && (
-                <span className="absolute top-1 right-1.5 h-2 w-2 rounded-full" style={{ background: "var(--ticket-red)" }} />
-              )}
-            </button>
-          );
-        })}
-      </nav>
-
-      <div className="mt-4">
-        <ErrorText error={error} />
-        {page === "home" && (
-          <HomeTab
-            state={state}
-            onChange={refresh}
-            goToRound={() => setPage("round")}
-            openRound={(id) => {
-              setViewingRound(id);
-              setPage("pastRound");
-            }}
-          />
-        )}
-        {page === "pastRound" && viewing && (
-          <div>
-            <button onClick={() => setPage("home")} className="btn-ghost mb-3 px-3 py-1.5 text-[13px]">
-              ← Back to Home
-            </button>
-            <RoundResults round={viewing} picks={state.results[viewing.id] ?? []} state={state} />
-          </div>
-        )}
-        {page === "round" && <RoundPanel state={state} onChange={refresh} />}
-        {page === "standings" && <Standings state={state} />}
-        {page === "chat" && <Chat state={state} />}
+            />
+          )}
+          {page === "pastRound" && viewing && (
+            <div>
+              <button onClick={() => setPage("home")} className="btn-ghost mb-3 px-3 py-1.5 text-[13px]">
+                ← Back to Home
+              </button>
+              <RoundResults round={viewing} picks={state.results[viewing.id] ?? []} state={state} />
+            </div>
+          )}
+          {page === "round" && <RoundPanel state={state} onChange={refresh} />}
+          {page === "standings" && <Standings state={state} />}
+          {page === "chat" && <Chat state={state} />}
+        </div>
       </div>
-    </div>
+    </PlayerCardProvider>
   );
 }
 
@@ -264,7 +272,9 @@ function LiveRound({ round, state, onOpen }: { round: Round; state: LeagueState;
           const done = submitting ? round.submitted_ids.includes(m.user_id) : round.voted_ids.includes(m.user_id);
           return (
             <div key={m.user_id} className="flex items-center gap-2 text-sm">
-              <Avatar avatar={m.avatar} size={22} />
+              <PlayerLink userId={m.user_id}>
+                <Avatar avatar={m.avatar} size={22} />
+              </PlayerLink>
               {done ? (
                 <Check size={15} color="var(--marquee-gold)" />
               ) : (
@@ -313,11 +323,13 @@ function Standings({ state }: { state: LeagueState }) {
                     <span className="mono w-5" style={{ color: i === 0 ? "var(--marquee-gold)" : "var(--reel-grey)" }}>
                       {i + 1}
                     </span>
-                    <Avatar avatar={m?.avatar ?? ""} size={26} />
-                    <span className={s.user_id === state.me ? "font-bold" : ""}>
-                      {m?.display_name}
-                      {s.user_id === state.me && " (you)"}
-                    </span>
+                    <PlayerLink userId={s.user_id} className="gap-2.5">
+                      <Avatar avatar={m?.avatar ?? ""} size={26} />
+                      <span className={s.user_id === state.me ? "font-bold" : ""}>
+                        {m?.display_name}
+                        {s.user_id === state.me && " (you)"}
+                      </span>
+                    </PlayerLink>
                     {s.round_wins > 0 && (
                       <span className="mono text-[11px]" style={{ color: "var(--marquee-gold)" }}>
                         {s.round_wins}× 🏆

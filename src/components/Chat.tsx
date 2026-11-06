@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import type { ChatMessage, LeagueState } from "@/lib/types";
 import { Avatar, ErrorText, SectionTitle, memberMap } from "./ui";
+import { PlayerLink } from "./PlayerCard";
 
 export function Chat({ state }: { state: LeagueState }) {
   const leagueId = state.league.id;
@@ -61,7 +62,9 @@ export function Chat({ state }: { state: LeagueState }) {
           const mine = m.user_id === state.me;
           return (
             <div key={m.id} className={`flex items-end gap-2 ${mine ? "flex-row-reverse" : ""}`}>
-              <Avatar avatar={who?.avatar ?? ""} size={26} />
+              <PlayerLink userId={m.user_id}>
+                <Avatar avatar={who?.avatar ?? ""} size={26} />
+              </PlayerLink>
               <div className={`flex max-w-[80%] flex-col ${mine ? "items-end" : "items-start"}`}>
                 <div className="mb-0.5 text-[11px]" style={{ color: "var(--reel-grey)" }}>
                   {who?.display_name ?? "Someone"} ·{" "}

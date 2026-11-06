@@ -5,6 +5,7 @@ import { AVATAR_FILMS } from "@/lib/avatar-films";
 import type { Member } from "@/lib/types";
 import { backdropUrl, useMovieDetails } from "./media";
 import { Avatar } from "./ui";
+import { PlayerLink } from "./PlayerCard";
 
 const CONFETTI_COLORS = ["#f0b429", "#e2472c", "#f5f1e6", "#2fb3a3", "#a83a63"];
 
@@ -51,12 +52,14 @@ export function ChampionCard({ champion, points }: { champion: Member; points?: 
           Season champion
         </div>
         <div className="mt-3 flex items-center justify-center gap-3">
-          <div className="rounded-full" style={{ boxShadow: "0 0 0 3px var(--marquee-gold), 0 0 24px 6px rgba(240,180,41,0.55)" }}>
-            <Avatar avatar={champion.avatar} size={56} />
-          </div>
-          <span className="display text-5xl leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]" style={{ color: "var(--marquee-gold)" }}>
-            {champion.display_name}
-          </span>
+          <PlayerLink userId={champion.user_id} className="gap-3">
+            <div className="rounded-full" style={{ boxShadow: "0 0 0 3px var(--marquee-gold), 0 0 24px 6px rgba(240,180,41,0.55)" }}>
+              <Avatar avatar={champion.avatar} size={56} />
+            </div>
+            <span className="display text-5xl leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]" style={{ color: "var(--marquee-gold)" }}>
+              {champion.display_name}
+            </span>
+          </PlayerLink>
         </div>
         {points !== undefined && (
           <div className="mono mt-2 text-sm" style={{ color: "var(--screen-white)" }}>

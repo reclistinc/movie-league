@@ -174,3 +174,50 @@ export interface Gif {
 
 /** The video a player attached to a pick: a video, "none" (explicitly no video), or null (older pick). */
 export type PickVideo = MovieVideo | "none" | null;
+
+export interface PlayerCardPick {
+  position: number;
+  theme: string;
+  tmdb_id: number;
+  title: string;
+  release_year: number | null;
+  poster_path: string | null;
+  points: number;
+  place: number;
+  field: number;
+  voters: number;
+  is_win: boolean;
+}
+
+/** One player's stats (get_player_card). Only finished rounds count. */
+export interface PlayerCard {
+  user_id: string;
+  display_name: string | null; // null = no longer in this league
+  avatar: string | null;
+  joined_at: string | null;
+  is_commissioner: boolean;
+  league: {
+    status: LeagueStatus;
+    finish: number | null;
+    field: number;
+    points: number;
+    round_wins: number;
+    rounds_played: number;
+    rounds_complete: number;
+    picks: PlayerCardPick[];
+    biggest_fan: { user_id: string; points: number } | null;
+    favorite: { user_id: string; points: number } | null;
+  };
+  career: {
+    leagues: number;
+    seasons_finished: number;
+    titles: number;
+    podiums: number;
+    best_finish: { finish: number; field: number } | null;
+    rounds_played: number;
+    round_wins: number;
+    points: number;
+    avg_points: number | null;
+    best_round: { points: number; place: number; field: number } | null;
+  };
+}
