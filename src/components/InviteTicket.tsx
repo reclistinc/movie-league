@@ -43,9 +43,9 @@ export function InviteLink({ code, leagueName }: { code: string; leagueName?: st
             <span>ONE</span>
           </div>
           <div className="invite-main">
-            <div className="mono text-[10px] tracking-[0.35em]">✦ YOU&apos;RE HOLDING AN ✦</div>
-            <div className="display text-[44px] leading-none tracking-[0.12em]">INVITE</div>
-            <div className="mono truncate text-[10px] tracking-[0.2em] uppercase">to {name}</div>
+            <div className="mono text-[8px] tracking-[0.3em]">✦ YOU&apos;RE HOLDING AN ✦</div>
+            <div className="display text-[32px] leading-none tracking-[0.12em]">INVITE</div>
+            <div className="mono max-w-full truncate text-[8px] tracking-[0.2em] uppercase">to {name}</div>
           </div>
           <div className="invite-tap mono">tap to reveal</div>
           {[12, 30, 58, 77, 90].map((left, i) => (
@@ -59,11 +59,11 @@ export function InviteLink({ code, leagueName }: { code: string; leagueName?: st
         <div className="invite-face invite-back">
           <div className="text-center">
             <div className="label text-[10px]">Invite code</div>
-            <div className="mono text-2xl tracking-[0.18em]" style={{ color: "var(--marquee-gold)" }}>
+            <div className="mono text-lg leading-tight tracking-[0.18em]" style={{ color: "var(--marquee-gold)" }}>
               {code}
             </div>
           </div>
-          <div className="mt-2.5 flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+          <div className="mt-1.5 flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
               onClick={() => {
@@ -71,21 +71,21 @@ export function InviteLink({ code, leagueName }: { code: string; leagueName?: st
                 setCopied(true);
                 setTimeout(() => setCopied(false), 1500);
               }}
-              className="btn-primary flex items-center gap-1.5 px-3.5 py-2 text-xs whitespace-nowrap"
+              className="btn-primary flex items-center gap-1.5 px-3 py-1.5 text-xs whitespace-nowrap"
             >
-              {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copied" : "Copy link"}
+              {copied ? <Check size={13} /> : <Copy size={13} />} {copied ? "Copied" : "Copy link"}
             </button>
             {canShare && (
               <button
                 type="button"
                 onClick={() => navigator.share({ title: name, text: `Join ${name} on Movie League!`, url: url() }).catch(() => {})}
-                className="btn-ghost flex items-center gap-1.5 px-3.5 py-2 text-xs whitespace-nowrap"
+                className="btn-ghost flex items-center gap-1.5 px-3 py-1.5 text-xs whitespace-nowrap"
               >
-                <Share2 size={14} /> Share
+                <Share2 size={13} /> Share
               </button>
             )}
           </div>
-          <div className="mono mt-2 text-center text-[10px]" style={{ color: "var(--reel-grey)" }}>
+          <div className="mono mt-1 text-center text-[9px]" style={{ color: "var(--reel-grey)" }}>
             tap the ticket to flip it back
           </div>
         </div>
@@ -96,7 +96,7 @@ export function InviteLink({ code, leagueName }: { code: string; leagueName?: st
         <div key={burst} className="invite-burst" aria-hidden>
           {Array.from({ length: 16 }).map((_, i) => {
             const angle = (i / 16) * Math.PI * 2;
-            const dist = 70 + (i % 3) * 28;
+            const dist = 50 + (i % 3) * 20;
             return (
               <span
                 key={i}
