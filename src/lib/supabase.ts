@@ -15,7 +15,9 @@ export function supabase(): SupabaseClient {
       );
     }
     client = createClient(url, key, {
-      auth: { flowType: "pkce", detectSessionInUrl: true, persistSession: true },
+      // "implicit": the default Supabase email link carries the session itself, so it works even when a
+      // phone opens it in a different browser (e.g. the Gmail app). Our custom template uses token_hash.
+      auth: { flowType: "implicit", detectSessionInUrl: true, persistSession: true },
     });
   }
   return client;
