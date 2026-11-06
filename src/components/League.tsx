@@ -12,7 +12,6 @@ import { Setup } from "./Setup";
 import { RoundPanel } from "./RoundPanel";
 import { RoundResults } from "./Results";
 import { Chat } from "./Chat";
-import { EditMe } from "./EditMe";
 import { ChampionCard } from "./Champion";
 
 type Page = "home" | "round" | "standings" | "chat" | "pastRound";
@@ -121,7 +120,6 @@ export function League({ leagueId }: { leagueId: string }) {
         {page === "home" && (
           <HomeTab
             state={state}
-            onChange={refresh}
             goToRound={() => setPage("round")}
             openRound={(id) => {
               setViewingRound(id);
@@ -147,12 +145,10 @@ export function League({ leagueId }: { leagueId: string }) {
 
 function HomeTab({
   state,
-  onChange,
   goToRound,
   openRound,
 }: {
   state: LeagueState;
-  onChange: () => void;
   goToRound: () => void;
   openRound: (id: string) => void;
 }) {
@@ -165,27 +161,6 @@ function HomeTab({
   return (
     <div className="space-y-3.5">
       {champion && <ChampionCard champion={champion} points={state.standings[0]?.points} />}
-
-      <div className="card p-4">
-        <SectionTitle icon={<Users size={16} color="var(--marquee-gold)" />}>THE LEAGUE</SectionTitle>
-        <div className="flex flex-col gap-1.5">
-          {state.members.map((m) => (
-            <div key={m.user_id} className="flex flex-wrap items-center gap-2.5 px-1 py-1">
-              <Avatar avatar={m.avatar} size={28} />
-              <span className={m.user_id === state.me ? "font-bold" : ""}>
-                {m.display_name}
-                {m.user_id === state.me && " (you)"}
-              </span>
-              {m.user_id === state.league.commissioner_id && (
-                <span className="mono text-[10px] uppercase" style={{ color: "var(--marquee-gold)" }}>
-                  commish
-                </span>
-              )}
-              {m.user_id === state.me && <EditMe state={state} onChange={onChange} />}
-            </div>
-          ))}
-        </div>
-      </div>
 
       <div className="card p-4">
         <SectionTitle icon={<Clapperboard size={16} color="var(--marquee-gold)" />}>CURRENT ROUND</SectionTitle>
@@ -286,6 +261,11 @@ function LiveRound({ round, state, onOpen }: { round: Round; state: LeagueState;
               )}
               <span style={{ color: done ? "var(--screen-white)" : "var(--reel-grey)" }}>
                 {m.display_name}
+                {m.user_id === state.league.commissioner_id && (
+                  <span title="Commissioner" style={{ color: "var(--marquee-gold)" }}>
+                    {" "}★
+                  </span>
+                )}
                 {m.user_id === state.me && " (you)"} —{" "}
                 {!inRound ? "joins next round" : submitting ? (done ? "submitted" : "hasn't submitted yet") : done ? "voted" : "hasn't voted yet"}
               </span>

@@ -10,6 +10,7 @@ import { Login } from "./Login";
 import { Home } from "./Home";
 import { Join } from "./Join";
 import { League } from "./League";
+import { UserMenu } from "./UserMenu";
 import { PosterWall } from "./media";
 import { TmdbAttribution } from "./ui";
 
@@ -86,11 +87,7 @@ export function App() {
           <Link href="/" className="display flex items-center gap-2 text-xl" style={{ color: "var(--screen-white)" }}>
             <Film size={18} color="var(--marquee-gold)" /> Movie <span style={{ color: "var(--marquee-gold)" }}>League</span>
           </Link>
-          {session && (
-            <button className="mono text-xs" style={{ color: "var(--reel-grey)" }} onClick={() => supabase().auth.signOut()}>
-              sign out
-            </button>
-          )}
+          {session && <UserMenu session={session} leagueId={league} />}
         </header>
         {linkError && !session && (
           <p className="mb-4 text-sm" style={{ color: "var(--ticket-red)" }}>
