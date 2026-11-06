@@ -13,6 +13,7 @@ import { Setup } from "./Setup";
 import { RoundPanel } from "./RoundPanel";
 import { RoundResults } from "./Results";
 import { Chat } from "./Chat";
+import { CommissionerTools } from "./CommissionerTools";
 import { ChampionCard } from "./Champion";
 
 type Page = "home" | "round" | "standings" | "chat" | "pastRound";
@@ -121,6 +122,7 @@ export function League({ leagueId }: { leagueId: string }) {
         {page === "home" && (
           <HomeTab
             state={state}
+            onChange={refresh}
             goToRound={() => setPage("round")}
             openRound={(id) => {
               setViewingRound(id);
@@ -146,10 +148,12 @@ export function League({ leagueId }: { leagueId: string }) {
 
 function HomeTab({
   state,
+  onChange,
   goToRound,
   openRound,
 }: {
   state: LeagueState;
+  onChange: () => void;
   goToRound: () => void;
   openRound: (id: string) => void;
 }) {
@@ -215,7 +219,7 @@ function HomeTab({
                         {winner && winner.points > 0 && (
                           <div className="text-xs" style={{ color: "var(--reel-grey)" }}>
                             Won by <span style={{ color: "var(--screen-white)" }}>{winner.title}</span> · picked by{" "}
-                            {byId[winner.user_id]?.display_name}
+                            {byId[winner.user_id]?.display_name ?? "Former player"}
                           </div>
                         )}
                       </div>
@@ -228,6 +232,7 @@ function HomeTab({
           </div>
         </div>
       )}
+      <CommissionerTools state={state} onChange={onChange} />
     </div>
   );
 }

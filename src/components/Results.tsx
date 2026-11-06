@@ -35,7 +35,7 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
                 <div className="display text-3xl leading-tight">{winner.title}</div>
                 <div className="mt-1 flex items-center gap-2 text-sm">
                   <Avatar avatar={byId[winner.user_id]?.avatar ?? ""} size={22} />
-                  picked by {byId[winner.user_id]?.display_name}
+                  picked by {byId[winner.user_id]?.display_name ?? "Former player"}
                 </div>
                 <div className="mt-2">
                   <TrailerButton tmdbId={winner.tmdb_id} title={winner.title} chosen={winner} />
@@ -76,7 +76,7 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
                 </span>
               </div>
               <div className="mt-1 flex items-center gap-2 text-[13px]" style={{ color: "var(--reel-grey)" }}>
-                <Avatar avatar={m?.avatar ?? ""} size={18} /> picked by {m?.display_name}
+                <Avatar avatar={m?.avatar ?? ""} size={18} /> picked by {m?.display_name ?? "Former player"}
                 <span className="ml-auto">
                   <TrailerButton tmdbId={p.tmdb_id} title={p.title} compact chosen={p} />
                 </span>
@@ -89,7 +89,7 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
                     .filter((v) => v.points > 0)
                     .map((v) => (
                       <span key={v.voter_id} className="mono inset rounded-full px-2 py-0.5 text-[11px]" style={{ color: "var(--reel-grey)", borderRadius: 20 }}>
-                        {byId[v.voter_id]?.display_name}: <span style={{ color: "var(--marquee-gold)" }}>{v.points}</span>
+                        {byId[v.voter_id]?.display_name ?? "Former player"}: <span style={{ color: "var(--marquee-gold)" }}>{v.points}</span>
                       </span>
                     ))}
                 </div>
@@ -105,7 +105,7 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
                         style={{ background: "var(--midnight)", borderLeft: "2px solid var(--marquee-gold)" }}
                       >
                         <span className="mono" style={{ color: "var(--marquee-gold)" }}>
-                          {byId[v.voter_id]?.display_name}:
+                          {byId[v.voter_id]?.display_name ?? "Former player"}:
                         </span>{" "}
                         {v.comment}
                       </div>

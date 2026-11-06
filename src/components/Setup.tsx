@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { THEMES, sampleThemes } from "@/lib/themes";
 import type { LeagueState } from "@/lib/types";
 import { Avatar, ErrorText, InviteLink, Marquee, SectionTitle } from "./ui";
+import { CommissionerTools } from "./CommissionerTools";
 
 type QueueItem = { theme: string; description: string };
 
@@ -233,6 +234,7 @@ export function Setup({ state, onChange }: { state: LeagueState; onChange: () =>
         </div>
       )}
       <ErrorText error={error} />
+      <CommissionerTools state={state} onChange={onChange} />
     </div>
   );
 }

@@ -28,7 +28,7 @@ Rules implemented:
 
 ### 1. Supabase
 1. Create a project at [supabase.com](https://supabase.com) (free tier).
-2. **SQL Editor →** paste and run each file in `supabase/migrations/`, oldest first (`…_init.sql`, `…_pick_gif.sql`, `…_pick_video.sql`). The video file also adds the GIF column, so on an existing project you can run just init + video.
+2. **SQL Editor →** paste and run each file in `supabase/migrations/`, oldest first (`…_init.sql`, `…_pick_gif.sql`, `…_pick_video.sql`, `…_commissioner_tools.sql`). The video file also adds the GIF column, so on an existing project you can run just init + video.
    (Or with the CLI: `supabase link` then `supabase db push`.)
 3. **Authentication → URL Configuration:** set *Site URL* to your Vercel URL and add
    `http://localhost:3000/**` and `https://YOUR-APP.vercel.app/**` to *Redirect URLs*.
