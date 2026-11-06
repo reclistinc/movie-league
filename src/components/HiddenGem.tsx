@@ -43,7 +43,7 @@ export function HiddenGemInfo({
                 <Gem size={22} /> HIDDEN GEM
               </div>
               <p className="mt-3 text-sm">
-                The pick hardly anyone had seen that still scored big — this round&apos;s best discovery.
+                The least-seen movie that still won people over.
               </p>
               <div className="inset mt-4 px-3 py-2.5 text-sm">
                 <b>{title}</b>{" "}

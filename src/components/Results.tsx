@@ -51,20 +51,6 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
               </div>
             </div>
           )}
-          {gem && (
-            <HiddenGemInfo title={gem.title} seenBy={gem.seen_by ?? 0} points={gem.points} className="mt-3 flex items-center gap-2 text-sm">
-              <Gem size={15} color={GEM_COLOR} className="shrink-0" />
-              <span>
-                <b style={{ color: GEM_COLOR }}>Hidden Gem:</b> {gem.title}{" "}
-                <span style={{ color: "var(--reel-grey)" }}>
-                  — {gem.seen_by === 0 ? "nobody else had seen it" : `only ${gem.seen_by} had seen it`}, {gem.points} pts
-                </span>{" "}
-                <span className="mono text-[10px] uppercase underline decoration-dotted" style={{ color: GEM_COLOR }}>
-                  what&apos;s this?
-                </span>
-              </span>
-            </HiddenGemInfo>
-          )}
           {picks.length === 0 && (
             <p className="mt-2 text-sm" style={{ color: "var(--reel-grey)" }}>
               No picks were submitted this round.
