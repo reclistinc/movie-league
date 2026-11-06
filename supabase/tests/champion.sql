@@ -37,7 +37,8 @@ select pg_temp.check((select count(*) from public.submissions s join public.roun
   'every player has a pick in every round');
 -- shapes
 select pg_temp.check(exists (select 1 from public.leagues l where (select count(*) from public.league_members m where m.league_id = l.id) = 20), 'a 20-player league');
-select pg_temp.check(exists (select 1 from public.leagues l where (select count(*) from public.league_members m where m.league_id = l.id) = 2), 'a 2-player league');
+select pg_temp.check(exists (select 1 from public.leagues l where (select count(*) from public.league_members m where m.league_id = l.id) = 3), 'a 3-player league (the minimum)');
+select pg_temp.check(not exists (select 1 from public.leagues l where (select count(*) from public.league_members m where m.league_id = l.id) < 3), 'no league under 3 players');
 select pg_temp.check(exists (select 1 from public.leagues l where (select count(*) from public.rounds r where r.league_id = l.id) >= 20), 'a 20+ round league');
 select pg_temp.check(exists (select 1 from public.leagues l where (select count(*) from public.chat_messages c where c.league_id = l.id) >= 50), 'a chatty league');
 select pg_temp.check((select count(distinct (select count(*) from public.league_members m where m.league_id = l.id)) >= 5

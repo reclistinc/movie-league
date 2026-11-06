@@ -16,7 +16,7 @@
 --        select public.demo_champion_league('you@example.com');              -- random champion
 --        select public.demo_champion_league('you@example.com', 'wizard');    -- the Wizard wins
 --        select public.demo_champion_all('you@example.com');                 -- 20 leagues, one per avatar
---      demo_champion_all makes leagues of every shape: one with 20 players, one with 2, a 22-round
+--      demo_champion_all makes leagues of every shape: one with 20 players, one with 3 (the minimum), a 22-round
 --      marathon, a very chatty one, and random ones in between. Pretend players turn up in several
 --      leagues (a few in just one), and each has their own Seen / Watchlist habits.
 --
@@ -524,11 +524,11 @@ begin
   end if;
   perform public._demo_ensure_bots();
 
-  if p_bots is null then  -- 2 to 7 random pretend players
+  if p_bots is null then  -- 2 to 7 random pretend players (3 to 8 players with you)
     p_bots := array(select user_id from public._demo_roster() order by random() limit 2 + floor(random() * 6)::int);
   end if;
-  if array_length(p_bots, 1) is null or array_length(p_bots, 1) > 19 then
-    raise exception 'Pick 1 to 19 pretend players (leagues hold 20 including you)';
+  if coalesce(array_length(p_bots, 1), 0) < 2 or array_length(p_bots, 1) > 19 then
+    raise exception 'Pick 2 to 19 pretend players (leagues hold 3 to 20 including you)';
   end if;
   players := array[me] || p_bots;
   n := array_length(players, 1);
@@ -662,19 +662,19 @@ begin
   for i in 1 .. 20 loop
     bots := case
       when i = 1 then oneoffs[1:1] || array(select r from unnest(regulars) r order by random() limit 18)   -- 20 players
-      when i = 2 then oneoffs[2:2]                                                                          -- 2 players
+      when i = 2 then oneoffs[2:2] || array(select r from unnest(regulars) r order by random() limit 1)    -- 3 players (the minimum)
       when i = 3 then oneoffs[3:3] || array(select r from unnest(regulars) r order by random() limit 3)    -- marathon
       when i = 4 then oneoffs[4:4] || array(select r from unnest(regulars) r order by random() limit 6)    -- chatty
       when i <= 8 then oneoffs[i:i] || array(select r from unnest(regulars) r order by random() limit 1 + floor(random() * 9)::int)
-      else array(select r from unnest(regulars) r order by random() limit 2 + floor(random() * 10)::int)
+      else array(select r from unnest(regulars) r order by random() limit 2 + floor(random() * 10)::int)  -- 3-12 players
     end;
     perform public.demo_champion_league(
       p_email, avs[i], bots,
       case when i = 3 then 22 when i = 1 then 5 end,
       i = 4,
-      case i when 1 then '20 players' when 2 then '2 players' when 3 then '22 rounds' when 4 then 'chatty' end);
+      case i when 1 then '20 players' when 2 then '3 players' when 3 then '22 rounds' when 4 then 'chatty' end);
   end loop;
-  return 'Created 20 Champion Demo leagues, one won by each avatar (incl. 20 players, 2 players, 22 rounds, chatty).';
+  return 'Created 20 Champion Demo leagues, one won by each avatar (incl. 20 players, 3 players, 22 rounds, chatty).';
 end;
 $$;
 

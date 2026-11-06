@@ -213,7 +213,7 @@ export function Setup({ state, onChange }: { state: LeagueState; onChange: () =>
             </button>
           )}
           <button
-            disabled={busy || dirty || queue.length === 0 || state.members.length < 2}
+            disabled={busy || dirty || queue.length === 0 || state.members.length < 3}
             onClick={() => {
               if (confirm("Start the season? The queue locks and round 1 opens for picks.")) run(() => api.startSeason(state.league.id));
             }}
@@ -224,8 +224,8 @@ export function Setup({ state, onChange }: { state: LeagueState; onChange: () =>
           <p className="text-center text-xs" style={{ color: "var(--reel-grey)" }}>
             {dirty
               ? "Save the queue before starting."
-              : state.members.length < 2
-                ? "Share the invite — you need at least 2 players to start."
+              : state.members.length < 3
+                ? `Share the invite — you need at least 3 players to start (${state.members.length} so far).`
                 : "Rounds can't be added or changed once the season starts."}
           </p>
         </div>

@@ -40,7 +40,7 @@ select pg_temp.check((select count(*) = 1 from public.leagues), 'commissioner se
 
 select public.set_season_queue(:'lid', '[{"theme":"Best heist"},{"theme":"90s comfort watch","description":"cozy"}]');
 select pg_temp.check((select count(*) = 2 from public.rounds where league_id = :'lid'), 'queue saved');
-select pg_temp.expect_error(format('select public.start_season(%L)', :'lid'), 'at least 2 players');
+select pg_temp.expect_error(format('select public.start_season(%L)', :'lid'), 'at least 3 players');
 
 select invite_code as code from public.leagues where id = :'lid' \gset
 
@@ -51,6 +51,7 @@ select pg_temp.check((public.preview_invite(:'code')->>'name') = 'Friday Flicks'
 select pg_temp.expect_error(format('select public.set_season_queue(%L, %L)', :'lid', '[]'), 'Only the commissioner');
 
 select pg_temp.as_user('b');  select public.join_league(lower(:'code'), 'Ben', 'wizard');
+select pg_temp.as_user('a');  select pg_temp.expect_error(format('select public.start_season(%L)', :'lid'), 'at least 3 players');
 select pg_temp.as_user('c');  select public.join_league(:'code', 'Cy', 'robot');
 select pg_temp.expect_error(format('select public.start_season(%L)', :'lid'), 'Only the commissioner');
 select pg_temp.check(public.join_league(:'code', 'Cy', 'robot') = :'lid'::uuid, 'joining twice is harmless');
