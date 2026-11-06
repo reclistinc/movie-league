@@ -108,7 +108,10 @@ export function TrailerButton({
   );
 }
 
-/** Under the chosen movie: pick which trailer/teaser/clip goes with your submission. */
+/**
+ * Under the chosen movie: pick which trailer/teaser/clip goes with your submission.
+ * Tapping a thumbnail plays it; "Use this video" in the player chooses it.
+ */
 export function VideoChooser({
   tmdbId,
   title,
@@ -121,7 +124,7 @@ export function VideoChooser({
   onChange: (v: MovieVideo | "none") => void;
 }) {
   const d = useMovieDetails(tmdbId);
-  const [preview, setPreview] = useState<MovieVideo | null>(null);
+  const [watching, setWatching] = useState<MovieVideo | null>(null);
   const firstVideo = d?.videos[0];
 
   // Pre-select the movie's main (official) trailer once its videos load.
@@ -137,58 +140,85 @@ export function VideoChooser({
     <div>
       <div className="label">Video to show voters</div>
       <p className="mt-1 mb-2 text-xs" style={{ color: "var(--reel-grey)" }}>
-        Pick the trailer, teaser or clip that sells your pick — voters can watch it while they vote. The official trailer is
-        selected to start with.
+        Tap a video to watch it, then choose the one that sells your pick — voters can watch it while they vote. The
+        official trailer is selected to start with.
       </p>
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex gap-2.5 overflow-x-auto pb-1">
         {videos.map((v) => {
           const selected = v.key === selectedKey;
           return (
-            <div key={v.key} className="w-32 shrink-0">
-              <button type="button" onClick={() => onChange(v)} className="relative block w-full text-left">
+            <button key={v.key} type="button" onClick={() => setWatching(v)} className="w-36 shrink-0 text-left">
+              <div className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={`https://i.ytimg.com/vi/${v.key}/mqdefault.jpg`}
                   alt=""
-                  className="aspect-video w-full rounded object-cover"
-                  style={{ border: selected ? "2px solid var(--marquee-gold)" : "2px solid transparent", opacity: selected ? 1 : 0.7 }}
+                  className="aspect-video w-full rounded-md bg-black object-cover"
+                  style={{ border: selected ? "2px solid var(--marquee-gold)" : "2px solid rgba(107,111,138,0.35)" }}
                 />
-                {selected && (
-                  <span className="absolute top-1 right-1 rounded-full p-0.5" style={{ background: "var(--marquee-gold)", color: "#211a06" }}>
-                    <Check size={12} />
+                <span className="absolute inset-0 flex items-center justify-center">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 ring-1 ring-white/30">
+                    <Play size={16} fill="white" color="white" />
                   </span>
-                )}
-              </button>
+                </span>
+              </div>
               <div className="mt-1 flex items-center justify-between gap-1">
                 <span className="mono text-[10px] uppercase" style={{ color: "var(--marquee-gold)" }}>
                   {v.type}
                 </span>
-                <button type="button" onClick={() => setPreview(v)} className="flex items-center gap-0.5 text-[10px]" style={{ color: "var(--reel-grey)" }}>
-                  <Play size={10} fill="currentColor" /> preview
-                </button>
+                {selected && (
+                  <span className="flex items-center gap-0.5 text-[10px] font-bold uppercase" style={{ color: "var(--marquee-gold)" }}>
+                    <Check size={11} /> Selected
+                  </span>
+                )}
               </div>
               <div className="truncate text-xs">{v.name}</div>
-            </div>
+            </button>
           );
         })}
         <button
           type="button"
           onClick={() => onChange("none")}
-          className="flex aspect-video w-24 shrink-0 items-center justify-center rounded text-xs"
+          className="flex aspect-video w-24 shrink-0 flex-col items-center justify-center gap-0.5 rounded-md text-xs"
           style={{
             border: value === "none" ? "2px solid var(--marquee-gold)" : "1px dashed rgba(107,111,138,0.6)",
             color: value === "none" ? "var(--marquee-gold)" : "var(--reel-grey)",
           }}
         >
+          {value === "none" && <Check size={13} />}
           No video
         </button>
       </div>
-      {preview && <TrailerModal title={title} videos={[preview]} onClose={() => setPreview(null)} />}
+      {watching && (
+        <TrailerModal
+          title={title}
+          videos={[watching]}
+          onClose={() => setWatching(null)}
+          action={{
+            selected: watching.key === selectedKey,
+            onUse: () => {
+              onChange(watching);
+              setWatching(null);
+            },
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function TrailerModal({ title, videos, onClose }: { title: string; videos: MovieVideo[]; onClose: () => void }) {
+function TrailerModal({
+  title,
+  videos,
+  onClose,
+  action,
+}: {
+  title: string;
+  videos: MovieVideo[];
+  onClose: () => void;
+  /** When choosing a video for your pick: shows a big "Use this video" button. */
+  action?: { selected: boolean; onUse: () => void };
+}) {
   const [current, setCurrent] = useState(videos[0]);
   const frame = useRef<HTMLIFrameElement>(null);
   const time = useRef(0);
@@ -284,6 +314,19 @@ function TrailerModal({ title, videos, onClose }: { title: string; videos: Movie
             </button>
           )}
         </div>
+        {action &&
+          (action.selected ? (
+            <div
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-base font-bold"
+              style={{ border: "1px solid var(--marquee-gold)", color: "var(--marquee-gold)" }}
+            >
+              <Check size={18} /> Selected for your pick
+            </div>
+          ) : (
+            <button onClick={action.onUse} className="btn-primary mt-3 flex w-full items-center justify-center gap-2 px-4 py-3 text-base">
+              <Check size={18} /> Use this video
+            </button>
+          ))}
         <div className="mt-2 flex items-center justify-center gap-2">
           <button onClick={() => skip(-10)} className="btn-ghost flex items-center gap-1 px-3 py-1.5 text-sm">
             <RotateCcw size={14} /> 10s

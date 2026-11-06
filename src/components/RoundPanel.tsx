@@ -213,14 +213,7 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
       {status}
       {chosen ? (
         <>
-          <ChosenPreview
-            movie={chosen}
-            onClear={() => {
-              setChosen(null);
-              setGifUrl(null);
-              setVideo(null);
-            }}
-          />
+          <ChosenPreview movie={chosen} />
           <VideoChooser key={`v${chosen.tmdb_id}`} tmdbId={chosen.tmdb_id} title={chosen.title} value={video} onChange={setVideo} />
           <GifPicker key={chosen.tmdb_id} movieTitle={chosen.title} value={gifUrl} onChange={setGifUrl} />
         </>
@@ -264,9 +257,23 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
 
       <div className="flex flex-wrap gap-2">
         {chosen && (
-          <button disabled={busy} onClick={submit} className="btn-primary px-5 py-2.5">
-            {busy ? "Locking in…" : mine ? "Update submission" : "Lock in submission"}
-          </button>
+          <>
+            <button disabled={busy} onClick={submit} className="btn-primary px-5 py-2.5">
+              {busy ? "Locking in…" : mine ? "Update submission" : "Lock in submission"}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setChosen(null);
+                setGifUrl(null);
+                setVideo(null);
+              }}
+              className="btn-ghost px-5 py-2.5"
+            >
+              Change movie
+            </button>
+          </>
         )}
         {mine && (
           <button
@@ -293,10 +300,10 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
   );
 }
 
-function ChosenPreview({ movie, onClear }: { movie: Movie; onClear: () => void }) {
+function ChosenPreview({ movie }: { movie: Movie }) {
   const d = useMovieDetails(movie.tmdb_id);
   return (
-    <BackdropCard tmdbId={movie.tmdb_id} strong className="overflow-hidden rounded-lg border" >
+    <BackdropCard tmdbId={movie.tmdb_id} strong className="overflow-hidden rounded-lg border">
       <div className="flex gap-4 p-4" style={{ borderColor: "var(--marquee-gold)" }}>
         <Poster movie={movie} width={92} />
         <div className="min-w-0 flex-1">
@@ -305,12 +312,6 @@ function ChosenPreview({ movie, onClear }: { movie: Movie; onClear: () => void }
             {[movie.release_year, d?.runtime ? `${d.runtime} min` : null, d?.genres.slice(0, 2).join(" / ")].filter(Boolean).join(" · ")}
           </div>
           {d?.overview && <p className="mt-2 line-clamp-3 text-[13px]">{d.overview}</p>}
-          <div className="mt-3 flex flex-wrap gap-2">
-            <TrailerButton tmdbId={movie.tmdb_id} title={movie.title} compact />
-            <button onClick={onClear} className="btn-ghost px-2.5 py-1 text-xs">
-              Change
-            </button>
-          </div>
         </div>
       </div>
     </BackdropCard>
