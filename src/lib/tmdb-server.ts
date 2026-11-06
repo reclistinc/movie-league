@@ -46,14 +46,14 @@ export async function getMovieDetails(id: number): Promise<MovieDetails | null> 
     poster_path: string | null;
     genres: { id: number; name: string }[];
     videos?: {
-      results: { key: string; name: string; site: string; type: string; official: boolean; published_at: string }[];
+      results: { key: string; name: string; site: string; type: string; official: boolean; published_at: string; size: number }[];
     };
   }>(`/movie/${id}`, { append_to_response: "videos" });
   if (m.adult === true) return null;
 
   const rank: Record<string, number> = { Trailer: 0, Teaser: 1, Clip: 2, Featurette: 3 };
   const videos: MovieVideo[] = (m.videos?.results ?? [])
-    .filter((v) => v.site === "YouTube" && v.type in rank)
+    .filter((v) => v.site === "YouTube" && v.type in rank && v.size >= 720) // HD only (720p/1080p uploads)
     .sort(
       (a, b) =>
         rank[a.type] - rank[b.type] ||

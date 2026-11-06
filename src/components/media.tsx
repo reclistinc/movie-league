@@ -69,7 +69,7 @@ type ChosenVideo = { video_key?: string | null; video_name?: string | null; vide
 
 /**
  * Plays a pick's video. If the player attached one, only that video plays (it's their pitch);
- * "none" hides the button; older picks without a choice fall back to the movie's trailers.
+ * "none" hides the button; picks without a choice play the movie's main trailer.
  */
 export function TrailerButton({
   tmdbId,
@@ -86,7 +86,8 @@ export function TrailerButton({
   const d = useMovieDetails(own || chosen?.video_type === "none" ? null : tmdbId);
   const [open, setOpen] = useState(false);
   if (chosen?.video_type === "none") return null;
-  const videos = own ?? d?.videos ?? [];
+  // Picks without a chosen video (older picks, the demo league) show just the main trailer.
+  const videos = own ?? (d?.videos.length ? [d.videos[0]] : []);
   if (videos.length === 0) return null;
   const label = own ? own[0].type : "Trailer";
   return (
