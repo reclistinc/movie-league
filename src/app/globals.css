@@ -147,3 +147,22 @@
 @media (prefers-reduced-motion: reduce) {
   .poster-wall, .bulb { animation: none; }
 }
+
+/* Confetti for the season champion */
+.confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 5; }
+.confetti span {
+  position: absolute;
+  top: -12px;
+  border-radius: 1px;
+  opacity: 0.9;
+  animation-name: confetti-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes confetti-fall {
+  0% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(260px) rotate(540deg); opacity: 0.2; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .confetti { display: none; }
+}

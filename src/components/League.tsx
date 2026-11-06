@@ -12,6 +12,7 @@ import { RoundPanel } from "./RoundPanel";
 import { RoundResults } from "./Results";
 import { Chat } from "./Chat";
 import { EditMe } from "./EditMe";
+import { ChampionCard } from "./Champion";
 
 type Page = "home" | "round" | "standings" | "chat" | "pastRound";
 
@@ -159,18 +160,7 @@ function HomeTab({
 
   return (
     <div className="space-y-3.5">
-      {champion && (
-        <div className="card p-5 text-center">
-          <Trophy size={26} color="var(--marquee-gold)" className="mx-auto" />
-          <div className="label mt-1">Season champion</div>
-          <div className="mt-2 flex items-center justify-center gap-2">
-            <Avatar avatar={champion.avatar} size={40} />
-            <span className="display text-3xl" style={{ color: "var(--marquee-gold)" }}>
-              {champion.display_name}
-            </span>
-          </div>
-        </div>
-      )}
+      {champion && <ChampionCard champion={champion} points={state.standings[0]?.points} />}
 
       <div className="card p-4">
         <SectionTitle icon={<Users size={16} color="var(--marquee-gold)" />}>THE LEAGUE</SectionTitle>
