@@ -51,10 +51,12 @@ export function HiddenGemInfo({
                   — {seenBy === 0 ? "nobody else had seen it" : `only ${seenBy} had seen it`}, and it still scored {points} pts.
                 </span>
               </div>
-              <ul className="mt-4 flex flex-col gap-1.5 text-[13px]" style={{ color: "var(--reel-grey)" }}>
-                <li>• Based on the Seen marks players made, frozen when the round&apos;s results came out.</li>
-                <li>• Only awarded when at least 2 players marked movies that round, and fewer than half of them had seen it.</li>
-                <li>• It has to have scored points. If two picks were seen by equally few, the higher score wins.</li>
+              <div className="label mt-4 mb-1.5">How it&apos;s picked</div>
+              <ul className="flex flex-col gap-1.5 text-[13px]" style={{ color: "var(--reel-grey)" }}>
+                <li>• Players tap Seen on movies they&apos;ve already watched.</li>
+                <li>• The gem is the movie with the fewest Seen taps that still got votes.</li>
+                <li>• If two are tied, the one with more points wins.</li>
+                <li>• It only shows up when enough players used Seen or Watchlist that round.</li>
               </ul>
             </div>
           </div>,
