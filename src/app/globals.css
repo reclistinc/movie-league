@@ -22,10 +22,7 @@
   --font-mono: "Space Mono", monospace;
 }
 
-/* The tilted poster wall reaches past the screen edges; never let the page scroll sideways. */
-html, body { overflow-x: hidden; max-width: 100%; }
 .ml-root {
-  overflow-x: clip;
   background: var(--midnight);
   color: var(--screen-white);
   font-family: "Inter", -apple-system, sans-serif;
@@ -111,11 +108,7 @@ html, body { overflow-x: hidden; max-width: 100%; }
 /* Drifting poster wall behind the app */
 .poster-wall {
   position: fixed;
-  top: -10%;
-  bottom: -10%;
-  left: -10%;
-  right: -10%;
-  contain: paint;
+  inset: -10%;
   z-index: 0;
   pointer-events: none;
   display: grid;
