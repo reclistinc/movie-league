@@ -8,6 +8,7 @@ import { Avatar, Poster, memberMap } from "./ui";
 import { PickGif } from "./GifPicker";
 import { PlayerLink } from "./PlayerCard";
 import { WatchMarks, useWatchMarks } from "./WatchMarks";
+import { GEM_COLOR, HiddenGemInfo } from "./HiddenGem";
 
 /** Full breakdown of a finished round: winner hero + ranked ticket stubs with votes and comments. */
 export function RoundResults({ round, picks, state }: { round: Round; picks: ResultPick[]; state: LeagueState }) {
@@ -51,15 +52,18 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
             </div>
           )}
           {gem && (
-            <div className="mt-3 flex items-center gap-2 text-sm">
-              <Gem size={15} color="#7dd3fc" />
+            <HiddenGemInfo title={gem.title} seenBy={gem.seen_by ?? 0} points={gem.points} className="mt-3 flex items-center gap-2 text-sm">
+              <Gem size={15} color={GEM_COLOR} className="shrink-0" />
               <span>
-                <b style={{ color: "#7dd3fc" }}>Hidden Gem:</b> {gem.title}{" "}
+                <b style={{ color: GEM_COLOR }}>Hidden Gem:</b> {gem.title}{" "}
                 <span style={{ color: "var(--reel-grey)" }}>
                   — {gem.seen_by === 0 ? "nobody else had seen it" : `only ${gem.seen_by} had seen it`}, {gem.points} pts
+                </span>{" "}
+                <span className="mono text-[10px] uppercase underline decoration-dotted" style={{ color: GEM_COLOR }}>
+                  what&apos;s this?
                 </span>
               </span>
-            </div>
+            </HiddenGemInfo>
           )}
           {picks.length === 0 && (
             <p className="mt-2 text-sm" style={{ color: "var(--reel-grey)" }}>
@@ -106,9 +110,14 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
               {(hasCounts || p === gem) && (
                 <div className="mono mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]" style={{ color: "var(--reel-grey)" }}>
                   {p === gem && (
-                    <span className="flex items-center gap-1 font-bold uppercase" style={{ color: "#7dd3fc" }}>
-                      <Gem size={12} /> Hidden Gem
-                    </span>
+                    <HiddenGemInfo title={p.title} seenBy={p.seen_by ?? 0} points={p.points}>
+                      <span
+                        className="flex items-center gap-1 rounded-full px-2 py-0.5 font-bold uppercase"
+                        style={{ color: GEM_COLOR, border: "1px solid rgba(125,211,252,0.45)", background: "rgba(125,211,252,0.08)" }}
+                      >
+                        <Gem size={12} /> Hidden Gem
+                      </span>
+                    </HiddenGemInfo>
                   )}
                   {hasCounts && (
                     <span className="flex items-center gap-1">
