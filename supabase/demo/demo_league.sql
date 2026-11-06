@@ -304,6 +304,7 @@ declare
   leader uuid;
   holder uuid;
   leader_avatar text;
+  mv record;
   all_avatars text[] := array['detective','wizard','astronaut','robot','ghost','alien','cowboy','vampire','ninja','pirate',
                               'hero','scientist','explorer','knight','monster','star','rager','lizard','cyborg','guardian'];
 begin
@@ -358,6 +359,32 @@ begin
     left join public.votes v on v.submission_id = sub.id
     group by sub.user_id
   ) s order by s.pts desc, random() limit 1;
+
+  -- No ties at the top: move single points from rivals to the leader (same voter, same round,
+  -- so every ballot still adds up) until the leader is clear.
+  loop
+    select v.voter_id, v.submission_id, ls.id into mv
+    from public.votes v
+    join public.submissions rs on rs.id = v.submission_id
+    join public.rounds r on r.id = rs.round_id and r.league_id = lid
+    join public.submissions ls on ls.round_id = rs.round_id and ls.user_id = leader
+    where v.points > 0 and v.voter_id <> leader
+      and rs.user_id in (
+        select sub.user_id from public.submissions sub
+        join public.rounds rr on rr.id = sub.round_id and rr.league_id = lid
+        left join public.votes vv on vv.submission_id = sub.id
+        where sub.user_id <> leader group by sub.user_id
+        having sum(coalesce(vv.points, 0)) >= (
+          select sum(coalesce(v2.points, 0)) from public.submissions s2
+          join public.rounds r2 on r2.id = s2.round_id and r2.league_id = lid
+          left join public.votes v2 on v2.submission_id = s2.id where s2.user_id = leader))
+    order by random() limit 1;
+    exit when not found;
+    update public.votes set points = points - 1 where voter_id = mv.voter_id and submission_id = mv.submission_id;
+    insert into public.votes (round_id, voter_id, submission_id, points)
+      select round_id, mv.voter_id, mv.id, 1 from public.submissions where id = mv.id
+    on conflict (voter_id, submission_id) do update set points = public.votes.points + 1;
+  end loop;
 
   -- Force the champion's avatar if asked (swap with whoever had it).
   if p_avatar is not null then

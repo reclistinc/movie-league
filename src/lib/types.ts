@@ -221,3 +221,6 @@ export interface PlayerCard {
     best_round: { points: number; place: number; field: number } | null;
   };
 }
+
+/** Your private mark on a movie: seen it, haven't, or on your watchlist. */
+export type WatchStatus = "seen" | "unseen" | "want";

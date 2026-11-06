@@ -11,6 +11,7 @@ import { RoundResults } from "./Results";
 import { matchTier, rankMovies } from "@/lib/rank";
 import { GifPicker, PickGif } from "./GifPicker";
 import { ErrorText, Poster } from "./ui";
+import { WatchMarks, useWatchMarks } from "./WatchMarks";
 
 export function RoundPanel({ state, onChange }: { state: LeagueState; onChange: () => void }) {
   const round = state.rounds.find((r) => r.id === state.current?.round_id);
@@ -331,6 +332,7 @@ function Vote({ round, state, onChange }: { round: Round; state: LeagueState; on
   const [error, setError] = useState<string | null>(null);
   const used = useMemo(() => Object.values(points).reduce((a, b) => a + b, 0), [points]);
   const left = budget - used;
+  const watch = useWatchMarks(picks.filter((p) => !p.is_mine).map((p) => p.tmdb_id));
 
   const bump = (id: string, d: number) =>
     setPoints((p) => {
@@ -372,7 +374,7 @@ function Vote({ round, state, onChange }: { round: Round; state: LeagueState; on
         </button>
       </div>
       {picks.map((p) => (
-        <PickTicket key={p.id} pick={p}>
+        <PickTicket key={p.id} pick={p} watch={p.is_mine ? undefined : watch}>
           {p.is_mine ? (
             <span className="text-xs" style={{ color: "var(--reel-grey)" }}>
               This is your submission — you can&apos;t give it points
@@ -415,6 +417,7 @@ function Locked({ state, round }: { state: LeagueState; round: Round }) {
   const totals = Object.fromEntries((cur.live_totals ?? []).map((t) => [t.submission_id, t.points]));
   const mine = Object.fromEntries((cur.my_votes ?? []).map((v) => [v.submission_id, v.points]));
   const picks = [...(cur.submissions ?? [])].sort((a, b) => (totals[b.id] ?? 0) - (totals[a.id] ?? 0));
+  const watch = useWatchMarks(picks.filter((p) => !p.is_mine).map((p) => p.tmdb_id));
   return (
     <div className="space-y-3">
       <div className="card flex items-center gap-2 px-4 py-3 text-sm">
@@ -422,7 +425,7 @@ function Locked({ state, round }: { state: LeagueState; round: Round }) {
         {round.voted_ids.length}/{round.participant_ids.length}).
       </div>
       {picks.map((p) => (
-        <PickTicket key={p.id} pick={p}>
+        <PickTicket key={p.id} pick={p} watch={p.is_mine ? undefined : watch}>
           <span className="flex items-center gap-1.5 text-xs" style={{ color: "var(--marquee-gold)" }}>
             {p.is_mine ? "Your pick" : (
               <>
@@ -442,7 +445,15 @@ function Locked({ state, round }: { state: LeagueState; round: Round }) {
   );
 }
 
-function PickTicket({ pick, children }: { pick: VotingPick; children: React.ReactNode }) {
+function PickTicket({
+  pick,
+  watch,
+  children,
+}: {
+  pick: VotingPick;
+  watch?: ReturnType<typeof useWatchMarks>;
+  children: React.ReactNode;
+}) {
   return (
     <div className="ticket">
       <BackdropCard tmdbId={pick.tmdb_id} className="flex w-full">
@@ -466,6 +477,11 @@ function PickTicket({ pick, children }: { pick: VotingPick; children: React.Reac
               </div>
             )}
             <PickGif url={pick.gif_url} />
+            {watch && (
+              <div className="mt-2">
+                <WatchMarks value={watch.marks[String(pick.tmdb_id)]} onChange={(st) => watch.set(pick.tmdb_id, st)} />
+              </div>
+            )}
             <div className="mt-2.5">{children}</div>
           </div>
         </div>
