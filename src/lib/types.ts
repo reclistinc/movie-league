@@ -149,7 +149,7 @@ export interface TrendingMovie {
 export interface MovieVideo {
   key: string; // YouTube video id
   name: string;
-  type: string; // Trailer | Teaser | Clip | Featurette
+  type: string; // Trailer | Teaser | Clip
 }
 
 export interface MovieDetails {

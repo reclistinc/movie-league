@@ -135,7 +135,11 @@ export function VideoChooser({
 
   return (
     <div>
-      <div className="label mb-2">Video to show voters</div>
+      <div className="label">Video to show voters</div>
+      <p className="mt-1 mb-2 text-xs" style={{ color: "var(--reel-grey)" }}>
+        Pick the trailer, teaser or clip that sells your pick — voters can watch it while they vote. The official trailer is
+        selected to start with.
+      </p>
       <div className="flex gap-2 overflow-x-auto pb-1">
         {videos.map((v) => {
           const selected = v.key === selectedKey;

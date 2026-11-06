@@ -51,7 +51,8 @@ export async function getMovieDetails(id: number): Promise<MovieDetails | null> 
   }>(`/movie/${id}`, { append_to_response: "videos" });
   if (m.adult === true) return null;
 
-  const rank: Record<string, number> = { Trailer: 0, Teaser: 1, Clip: 2, Featurette: 3 };
+  // Only footage from the movie or its marketing: no featurettes, behind-the-scenes or bloopers.
+  const rank: Record<string, number> = { Trailer: 0, Teaser: 1, Clip: 2 };
   const videos: MovieVideo[] = (m.videos?.results ?? [])
     .filter((v) => v.site === "YouTube" && v.type in rank && v.size >= 720) // HD only (720p/1080p uploads)
     .sort(
