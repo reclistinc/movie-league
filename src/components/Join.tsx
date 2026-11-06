@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 import type { InvitePreview } from "@/lib/types";
 import { AVATAR_OPTIONS } from "./art";
 import { AvatarPicker, ErrorText, Marquee } from "./ui";
@@ -20,7 +21,28 @@ export function Join({ code }: { code: string }) {
       (p) => {
         if (p?.already_member) router.replace(`/?league=${p.league_id}`);
         setPreview(p);
-        if (p) setAvatar(AVATAR_OPTIONS.find((a) => !p.taken_avatars.includes(a.id))?.id ?? AVATAR_OPTIONS[0].id);
+        if (!p) return;
+        const firstFree = AVATAR_OPTIONS.find((a) => !p.taken_avatars.includes(a.id))?.id ?? AVATAR_OPTIONS[0].id;
+        setAvatar(firstFree);
+        // Start from the name/avatar you used most recently (if that avatar is free here).
+        supabase()
+          .auth.getSession()
+          .then(({ data }) => {
+            const uid = data.session?.user.id;
+            if (!uid) return;
+            return supabase()
+              .from("league_members")
+              .select("display_name, avatar")
+              .eq("user_id", uid)
+              .order("joined_at", { ascending: false })
+              .limit(1)
+              .then(({ data: rows }) => {
+                const last = (rows as { display_name: string; avatar: string }[] | null)?.[0];
+                if (!last) return;
+                setDisplayName((n) => n || last.display_name);
+                if (!p.taken_avatars.includes(last.avatar)) setAvatar(last.avatar);
+              });
+          });
       },
       (e) => setError(e.message),
     );

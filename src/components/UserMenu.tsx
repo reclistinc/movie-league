@@ -11,7 +11,10 @@ import { Avatar, AvatarPicker, ErrorText } from "./ui";
 
 type Membership = { league_id: string; display_name: string; avatar: string; joined_at: string };
 
-/** Your avatar in the top corner; tap for Profile, My Watchlist and Sign out. */
+/**
+ * Top-right account menu. Inside a league it shows your avatar there and Profile edits that league only;
+ * elsewhere it's a plain account icon (your name/avatar can differ from league to league).
+ */
 export function UserMenu({ session, leagueId }: { session: Session; leagueId: string | null }) {
   const [memberships, setMemberships] = useState<Membership[] | null>(null);
   const [open, setOpen] = useState(false);
@@ -39,8 +42,8 @@ export function UserMenu({ session, leagueId }: { session: Session; leagueId: st
     return () => window.removeEventListener("pointerdown", onDown);
   }, [open]);
 
-  // The avatar shown: this league's, otherwise your most recent one.
-  const me = memberships?.find((m) => m.league_id === leagueId) ?? memberships?.[0] ?? null;
+  // Your name/avatar in the league you're looking at (none outside a league).
+  const me = leagueId ? (memberships?.find((m) => m.league_id === leagueId) ?? null) : null;
 
   return (
     <div ref={ref} className="relative">
@@ -63,21 +66,23 @@ export function UserMenu({ session, leagueId }: { session: Session; leagueId: st
       {open && (
         <div className="card absolute right-0 z-50 mt-2 w-56 overflow-hidden p-0 shadow-xl shadow-black/50" style={{ background: "rgba(28,30,51,0.97)" }}>
           <div className="border-b px-4 py-3" style={{ borderColor: "rgba(107,111,138,0.3)" }}>
-            <div className="truncate text-sm font-bold">{me?.display_name ?? "Welcome"}</div>
+            <div className="truncate text-sm font-bold">{me?.display_name ?? "Signed in"}</div>
             <div className="truncate text-xs" style={{ color: "var(--reel-grey)" }}>
               {session.user.email}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              setEditing(true);
-            }}
-            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm hover:bg-white/5"
-          >
-            <UserRound size={16} color="var(--marquee-gold)" /> Profile
-          </button>
+          {me && leagueId && (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setEditing(true);
+              }}
+              className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm hover:bg-white/5"
+            >
+              <UserRound size={16} color="var(--marquee-gold)" /> Profile (this league)
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {
@@ -98,11 +103,10 @@ export function UserMenu({ session, leagueId }: { session: Session; leagueId: st
         </div>
       )}
 
-      {editing && (
+      {editing && me && leagueId && (
         <ProfileEditor
           uid={uid}
           email={session.user.email ?? ""}
-          memberships={memberships ?? []}
           leagueId={leagueId}
           start={me}
           onClose={() => setEditing(false)}
@@ -119,7 +123,6 @@ export function UserMenu({ session, leagueId }: { session: Session; leagueId: st
 function ProfileEditor({
   uid,
   email,
-  memberships,
   leagueId,
   start,
   onClose,
@@ -127,21 +130,19 @@ function ProfileEditor({
 }: {
   uid: string;
   email: string;
-  memberships: Membership[];
-  leagueId: string | null;
-  start: Membership | null;
+  leagueId: string;
+  start: Membership;
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [name, setName] = useState(start?.display_name ?? "");
-  const [avatar, setAvatar] = useState(start?.avatar ?? "detective");
+  const [name, setName] = useState(start.display_name);
+  const [avatar, setAvatar] = useState(start.avatar);
   const [taken, setTaken] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Inside a league, grey out avatars other players there already use.
+  // Grey out avatars other players in this league already use.
   useEffect(() => {
-    if (!leagueId) return;
     supabase()
       .from("league_members")
       .select("avatar")
@@ -155,8 +156,7 @@ function ProfileEditor({
     setBusy(true);
     setError(null);
     try {
-      // One profile: apply to every league you're in.
-      await Promise.all(memberships.map((m) => api.updateMe(m.league_id, name, avatar)));
+      await api.updateMe(leagueId, name, avatar);
       onSaved();
     } catch (err) {
       setError((err as Error).message);
@@ -178,27 +178,19 @@ function ProfileEditor({
         <div className="text-xs" style={{ color: "var(--reel-grey)" }}>
           Signed in as {email}
         </div>
-        {memberships.length === 0 ? (
-          <p className="text-sm">Create or join a league first — then you can pick your name and avatar here.</p>
-        ) : (
-          <>
-            <AvatarPicker value={avatar} onChange={setAvatar} taken={taken} />
-            <input className="field mono" required maxLength={40} placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} />
-            {memberships.length > 1 && (
-              <p className="text-xs" style={{ color: "var(--reel-grey)" }}>
-                Updates your name and avatar in all {memberships.length} of your leagues.
-              </p>
-            )}
-            <div className="flex gap-2">
-              <button className="btn-primary px-5 py-2.5" disabled={busy || !name.trim()}>
-                {busy ? "Saving…" : "Save"}
-              </button>
-              <button type="button" className="btn-ghost px-5 py-2.5" onClick={onClose}>
-                Cancel
-              </button>
-            </div>
-          </>
-        )}
+        <p className="text-xs" style={{ color: "var(--reel-grey)" }}>
+          Your name and avatar in this league only — you can be someone different in each league.
+        </p>
+        <AvatarPicker value={avatar} onChange={setAvatar} taken={taken} />
+        <input className="field mono" required maxLength={40} placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} />
+        <div className="flex gap-2">
+          <button className="btn-primary px-5 py-2.5" disabled={busy || !name.trim()}>
+            {busy ? "Saving…" : "Save"}
+          </button>
+          <button type="button" className="btn-ghost px-5 py-2.5" onClick={onClose}>
+            Cancel
+          </button>
+        </div>
         <ErrorText error={error} />
       </form>
     </div>,

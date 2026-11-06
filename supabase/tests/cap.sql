@@ -22,4 +22,8 @@ do $$ declare av text[] := array['detective','wizard','astronaut','robot','ghost
 select pg_temp.check((select (public.preview_invite(:'code')->>'member_count')::int = 20), '20 players joined');
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000021',false);
 select pg_temp.check(pg_temp.fails(format('select public.join_league(%L,%L,%L)', :'code','U21','wizard'), 'full'), '21st player rejected');
+-- editing your avatar can't take one already used in the league
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000002',false);
+select pg_temp.check(pg_temp.fails(format('select public.update_my_member(%L,%L,%L)', :'lid','U2','detective'), 'already has that avatar'), 'edit to a taken avatar rejected');
+select public.update_my_member(:'lid', 'U2 renamed', 'wizard');  -- keeping your own avatar is fine
 \echo 'CAP TESTS PASSED'
