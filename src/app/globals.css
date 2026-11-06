@@ -78,7 +78,7 @@
 .stub-divider { border-left: 2px dashed rgba(107, 111, 138, 0.4); }
 
 .card {
-  background: rgba(28, 30, 51, 0.72);
+  background: rgba(28, 30, 51, 0.55);
   border-radius: 10px;
   border: 1px solid rgba(107, 111, 138, 0.3);
   -webkit-backdrop-filter: blur(3px);
