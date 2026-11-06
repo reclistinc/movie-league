@@ -22,50 +22,24 @@ export function Home() {
 
   if (creating) return <CreateLeague onCancel={() => setCreating(false)} />;
 
+  const groups: { status: LeagueSummary["status"]; title: string }[] = [
+    { status: "setup", title: "Coming Soon" },
+    { status: "active", title: "Now Showing" },
+    { status: "complete", title: "That's a Wrap" },
+  ];
+
   return (
     <div className="space-y-4">
       <Marquee>
         <div className="text-center">
           <div className="display text-[34px] leading-none" style={{ color: "var(--marquee-gold)" }}>
-            NOW SHOWING
+            YOUR LEAGUES
           </div>
           <div className="mt-1 text-[13px]" style={{ color: "var(--reel-grey)" }}>
-            your leagues
+            start one, join one, or jump back in
           </div>
         </div>
       </Marquee>
-      <ErrorText error={error} />
-      {leagues?.length === 0 && (
-        <div className="card p-5 text-sm" style={{ color: "var(--reel-grey)" }}>
-          No leagues yet — start one, or join a friend&apos;s with their invite code.
-        </div>
-      )}
-      {leagues?.map((l) => (
-        <Link key={l.id} href={`/?league=${l.id}`} className="ticket block hover:border-[var(--marquee-gold)]">
-          <div className="flex w-16 shrink-0 items-center justify-center">
-            <Clapperboard size={22} color="var(--marquee-gold)" />
-          </div>
-          <div className="stub-divider flex-1 px-4 py-3">
-            <div className="flex items-center justify-between gap-2">
-              <span className="display text-2xl" style={{ color: "var(--marquee-gold)" }}>
-                {l.name}
-              </span>
-              <span className="mono text-[11px] uppercase" style={{ color: "var(--reel-grey)" }}>
-                {l.status === "setup" ? "in setup" : l.status}
-              </span>
-            </div>
-            <p className="text-[13px]" style={{ color: "var(--reel-grey)" }}>
-              {l.member_count} players{l.is_commissioner && " · you're the commissioner"}
-            </p>
-            {l.live_round && (
-              <p className="mono mt-1 text-xs">
-                “{l.live_round.theme}” — {l.live_round.status === "submitting" ? "picks open" : "voting open"} ·{" "}
-                <Countdown to={l.live_round.deadline} />
-              </p>
-            )}
-          </div>
-        </Link>
-      ))}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <button onClick={() => setCreating(true)} className="btn-primary flex items-center justify-center gap-2 px-4 py-3">
@@ -78,12 +52,59 @@ export function Home() {
             if (joinCode.trim()) router.push(`/?join=${encodeURIComponent(joinCode.trim())}`);
           }}
         >
-          <input className="field mono flex-1" placeholder="Invite code" value={joinCode} onChange={(e) => setJoinCode(e.target.value)} />
+          <input className="field mono min-w-0 flex-1" placeholder="Invite code" value={joinCode} onChange={(e) => setJoinCode(e.target.value)} />
           <button className="btn-ghost flex items-center gap-1 px-3">
             <Ticket size={15} /> Join
           </button>
         </form>
       </div>
+
+      <ErrorText error={error} />
+      {leagues?.length === 0 && (
+        <div className="card p-5 text-sm" style={{ color: "var(--reel-grey)" }}>
+          No leagues yet — start one, or join a friend&apos;s with their invite code.
+        </div>
+      )}
+      {groups.map(({ status, title }) => {
+        const list = leagues?.filter((l) => l.status === status) ?? [];
+        if (list.length === 0) return null;
+        return (
+          <section key={status} className="space-y-2.5">
+            <div className="flex items-center gap-2.5 pt-1">
+              <span className="label whitespace-nowrap" style={{ color: status === "active" ? "var(--marquee-gold)" : undefined }}>
+                {title} · {list.length}
+              </span>
+              <span className="h-px flex-1" style={{ background: "rgba(107,111,138,0.3)" }} />
+            </div>
+            {list.map((l) => (
+              <Link key={l.id} href={`/?league=${l.id}`} className="ticket block hover:border-[var(--marquee-gold)]">
+                <div className="flex w-16 shrink-0 items-center justify-center">
+                  <Clapperboard size={22} color={status === "complete" ? "var(--reel-grey)" : "var(--marquee-gold)"} />
+                </div>
+                <div className="stub-divider flex-1 px-4 py-3">
+                  <span className="display text-2xl" style={{ color: "var(--marquee-gold)" }}>
+                    {l.name}
+                  </span>
+                  <p className="text-[13px]" style={{ color: "var(--reel-grey)" }}>
+                    {l.member_count} players{l.is_commissioner && " · you're the commissioner"}
+                  </p>
+                  {status === "setup" && (
+                    <p className="mono mt-1 text-xs">
+                      {l.is_commissioner ? "Plan the rounds, then roll film" : "Waiting for kickoff"}
+                    </p>
+                  )}
+                  {l.live_round && (
+                    <p className="mono mt-1 text-xs">
+                      “{l.live_round.theme}” — {l.live_round.status === "submitting" ? "picks open" : "voting open"} ·{" "}
+                      <Countdown to={l.live_round.deadline} />
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </section>
+        );
+      })}
     </div>
   );
 }
