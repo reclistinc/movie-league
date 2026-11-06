@@ -26,4 +26,8 @@ select pg_temp.check(pg_temp.fails(format('select public.join_league(%L,%L,%L)',
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000002',false);
 select pg_temp.check(pg_temp.fails(format('select public.update_my_member(%L,%L,%L)', :'lid','U2','detective'), 'already has that avatar'), 'edit to a taken avatar rejected');
 select public.update_my_member(:'lid', 'U2 renamed', 'wizard');  -- keeping your own avatar is fine
+-- names are unique per league, ignoring case/spaces (U3 exists)
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000002',false);
+select pg_temp.check(pg_temp.fails(format('select public.update_my_member(%L,%L,%L)', :'lid','  u3 ','wizard'), 'already called'), 'duplicate name rejected (case/space-insensitive)');
+select public.update_my_member(:'lid', 'U2 renamed', 'wizard');  -- keeping your own name is fine
 \echo 'CAP TESTS PASSED'
