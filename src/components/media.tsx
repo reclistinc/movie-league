@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Check, Play, VolumeX, X } from "lucide-react";
+import { Check, Link2, Play, Plus, VolumeX, X } from "lucide-react";
+import { CustomClipModal } from "./CustomClip";
+import { formatTime } from "@/lib/youtube";
 import type { MovieDetails, MovieVideo, TrendingMovie } from "@/lib/types";
 import { POSTER_BASE } from "@/lib/images";
 
@@ -65,7 +67,18 @@ export function BackdropCard({
 // Trailers & clips (YouTube embeds — played from YouTube, not hosted by us)
 // ---------------------------------------------------------------------------
 
-type ChosenVideo = { video_key?: string | null; video_name?: string | null; video_type?: string | null };
+type ChosenVideo = {
+  video_key?: string | null;
+  video_name?: string | null;
+  video_type?: string | null;
+  video_start?: number | null;
+  video_end?: number | null;
+};
+
+const isCustom = (v: { type?: string | null } | null | undefined) => v?.type === "Custom";
+/** "0:45–1:30", "from 0:45", or "" */
+export const clipRange = (start?: number | null, end?: number | null) =>
+  start != null && end != null ? `${formatTime(start)}–${formatTime(end)}` : start ? `from ${formatTime(start)}` : end ? `to ${formatTime(end)}` : "";
 
 /**
  * Plays a pick's video. If the player attached one, only that video plays (it's their pitch);
@@ -76,20 +89,33 @@ export function TrailerButton({
   title,
   compact = false,
   chosen,
+  onRemove,
 }: {
   tmdbId: number;
   title: string;
   compact?: boolean;
   chosen?: ChosenVideo;
+  /** Commissioner only: take a player's own clip off this pick. */
+  onRemove?: () => void;
 }) {
-  const own = chosen?.video_key ? [{ key: chosen.video_key, name: chosen.video_name ?? title, type: chosen.video_type ?? "Trailer" }] : null;
+  const own = chosen?.video_key
+    ? [
+        {
+          key: chosen.video_key,
+          name: chosen.video_name ?? title,
+          type: chosen.video_type ?? "Trailer",
+          start: chosen.video_start,
+          end: chosen.video_end,
+        },
+      ]
+    : null;
   const d = useMovieDetails(own || chosen?.video_type === "none" ? null : tmdbId);
   const [open, setOpen] = useState(false);
   if (chosen?.video_type === "none") return null;
   // Picks without a chosen video (older picks, the demo league) show just the main trailer.
   const videos = own ?? (d?.videos.length ? [d.videos[0]] : []);
   if (videos.length === 0) return null;
-  const label = own ? own[0].type : "Trailer";
+  const label = own ? (isCustom(own[0]) ? "Scene" : own[0].type) : "Trailer";
   return (
     <>
       <button
@@ -103,7 +129,23 @@ export function TrailerButton({
       >
         <Play size={compact ? 12 : 14} fill="currentColor" /> {label}
       </button>
-      {open && <TrailerModal title={title} videos={videos} onClose={() => setOpen(false)} />}
+      {open && (
+        <TrailerModal
+          title={title}
+          videos={videos}
+          onClose={() => setOpen(false)}
+          onRemove={
+            onRemove && own && isCustom(own[0])
+              ? () => {
+                  if (confirm("Remove this player's clip from their pick? Voters will see no video for it.")) {
+                    onRemove();
+                    setOpen(false);
+                  }
+                }
+              : undefined
+          }
+        />
+      )}
     </>
   );
 }
@@ -125,6 +167,7 @@ export function VideoChooser({
 }) {
   const d = useMovieDetails(tmdbId);
   const [watching, setWatching] = useState<MovieVideo | null>(null);
+  const [addingClip, setAddingClip] = useState(false);
   const firstVideo = d?.videos[0];
 
   // Pre-select the movie's main (official) trailer once its videos load.
@@ -132,16 +175,18 @@ export function VideoChooser({
     if (value === null && firstVideo) onChange(firstVideo);
   }, [value, firstVideo, onChange]);
 
-  const videos = d?.videos ?? [];
-  if (!d || videos.length === 0) return null;
+  if (!d) return null;
+  const custom = value && value !== "none" && isCustom(value) ? value : null;
+  // Your own clip (if any) first, then the movie's trailers and clips.
+  const videos = [...(custom ? [custom] : []), ...d.videos];
   const selectedKey = value && value !== "none" ? value.key : null;
 
   return (
     <div>
       <div className="label">Video to show voters</div>
       <p className="mt-1 mb-2 text-xs" style={{ color: "var(--reel-grey)" }}>
-        Tap a video to watch it, then choose the one that sells your pick — voters can watch it while they vote. The
-        official trailer is selected to start with.
+        Tap a video to watch it, then choose the one that sells your pick — voters can watch it while they vote.
+        {d.videos.length > 0 && " The official trailer is selected to start with."}
       </p>
       <div className="flex gap-2.5 overflow-x-auto pb-1">
         {videos.map((v) => {
@@ -164,7 +209,7 @@ export function VideoChooser({
               </div>
               <div className="mt-1 flex items-center justify-between gap-1">
                 <span className="mono text-[10px] uppercase" style={{ color: "var(--marquee-gold)" }}>
-                  {v.type}
+                  {isCustom(v) ? `Your clip ${clipRange(v.start, v.end)}` : v.type}
                 </span>
                 {selected && (
                   <span className="flex items-center gap-0.5 text-[10px] font-bold uppercase" style={{ color: "var(--marquee-gold)" }}>
@@ -189,6 +234,26 @@ export function VideoChooser({
           No video
         </button>
       </div>
+      <button
+        type="button"
+        onClick={() => setAddingClip(true)}
+        className="mt-2 flex items-center gap-1.5 text-xs underline decoration-dotted underline-offset-2"
+        style={{ color: "var(--reel-grey)" }}
+      >
+        {custom ? <Link2 size={13} /> : <Plus size={13} />}
+        {custom ? "Change your own clip" : "Want a specific scene? Use your own YouTube clip"}
+      </button>
+      {addingClip && (
+        <CustomClipModal
+          movieTitle={title}
+          initial={custom}
+          onClose={() => setAddingClip(false)}
+          onUse={(clip) => {
+            onChange(clip);
+            setAddingClip(false);
+          }}
+        />
+      )}
       {watching && (
         <TrailerModal
           title={title}
@@ -207,15 +272,17 @@ export function VideoChooser({
   );
 }
 
-function TrailerModal({
+export function TrailerModal({
   title,
   videos,
   onClose,
   action,
+  onRemove,
 }: {
   title: string;
   videos: MovieVideo[];
   onClose: () => void;
+  onRemove?: () => void;
   /** When choosing a video for your pick: shows a big "Use this video" button. */
   action?: { selected: boolean; onUse: () => void };
 }) {
@@ -260,7 +327,9 @@ function TrailerModal({
             key={current.key}
             className="absolute inset-0 h-full w-full"
             // controls=0 etc.: just the video, none of YouTube's buttons or menus on top.
-            src={`https://www.youtube-nocookie.com/embed/${current.key}?autoplay=1&mute=1&rel=0&playsinline=1&controls=0&fs=0&disablekb=1&iv_load_policy=3&cc_load_policy=0&enablejsapi=1&origin=${encodeURIComponent(
+            src={`https://www.youtube-nocookie.com/embed/${current.key}?autoplay=1&mute=1&rel=0&playsinline=1&controls=0&fs=0&disablekb=1&iv_load_policy=3&cc_load_policy=0&enablejsapi=1${
+              current.start ? `&start=${current.start}` : ""
+            }${current.end ? `&end=${current.end}` : ""}&origin=${encodeURIComponent(
               typeof window === "undefined" ? "" : window.location.origin,
             )}`}
             title={current.name}
@@ -309,6 +378,22 @@ function TrailerModal({
             )}
           </button>
         </div>
+        {isCustom(current) && (
+          <p className="mt-2 text-center text-[11px]" style={{ color: "var(--reel-grey)" }}>
+            Player&apos;s own clip{clipRange(current.start, current.end) && ` · ${clipRange(current.start, current.end)}`} · may contain
+            spoilers
+          </p>
+        )}
+        {onRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="btn-ghost mx-auto mt-2 block px-3 py-1.5 text-xs"
+            style={{ borderColor: "rgba(226,71,44,0.5)", color: "#f08a76" }}
+          >
+            Remove this clip (commissioner)
+          </button>
+        )}
         {action &&
           (action.selected ? (
             <div

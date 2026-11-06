@@ -398,7 +398,7 @@ function Vote({ round, state, onChange }: { round: Round; state: LeagueState; on
         </button>
       </div>
       {picks.map((p) => (
-        <PickTicket key={p.id} pick={p} watch={p.is_mine ? undefined : watch}>
+        <PickTicket key={p.id} pick={p} watch={p.is_mine ? undefined : watch} isComm={state.league.is_commissioner}>
           {p.is_mine ? (
             <span className="text-xs" style={{ color: "var(--reel-grey)" }}>
               This is your submission — you can&apos;t give it points
@@ -449,7 +449,7 @@ function Locked({ state, round }: { state: LeagueState; round: Round }) {
         {round.voted_ids.length}/{round.participant_ids.length}).
       </div>
       {picks.map((p) => (
-        <PickTicket key={p.id} pick={p} watch={p.is_mine ? undefined : watch}>
+        <PickTicket key={p.id} pick={p} watch={p.is_mine ? undefined : watch} isComm={state.league.is_commissioner}>
           <span className="flex items-center gap-1.5 text-xs" style={{ color: "var(--marquee-gold)" }}>
             {p.is_mine ? "Your pick" : (
               <>
@@ -472,10 +472,12 @@ function Locked({ state, round }: { state: LeagueState; round: Round }) {
 function PickTicket({
   pick,
   watch,
+  isComm = false,
   children,
 }: {
   pick: VotingPick;
   watch?: ReturnType<typeof useWatchMarks>;
+  isComm?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -493,7 +495,13 @@ function PickTicket({
                   {pick.release_year}
                 </span>
               </div>
-              <TrailerButton tmdbId={pick.tmdb_id} title={pick.title} compact chosen={pick} />
+              <TrailerButton
+                tmdbId={pick.tmdb_id}
+                title={pick.title}
+                compact
+                chosen={pick}
+                onRemove={isComm ? () => api.removePickVideo(pick.id).catch((e: Error) => alert(e.message)) : undefined}
+              />
             </div>
             {pick.note && (
               <div className="mt-1 text-[13px]" style={{ color: "var(--reel-grey)" }}>

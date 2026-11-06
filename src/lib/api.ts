@@ -85,9 +85,16 @@ export const api = {
       ...(video === "none"
         ? { p_video_type: "none" }
         : video
-          ? { p_video_key: video.key, p_video_name: video.name, p_video_type: video.type }
+          ? {
+              p_video_key: video.key,
+              p_video_name: video.name,
+              p_video_type: video.type,
+              ...(video.start != null ? { p_video_start: video.start } : {}),
+              ...(video.end != null ? { p_video_end: video.end } : {}),
+            }
           : {}),
     }),
+  removePickVideo: (submissionId: string) => rpc<void>("remove_pick_video", { p_submission_id: submissionId }),
   castVotes: (roundId: string, votes: VoteInput[]) => rpc<void>("cast_votes", { p_round_id: roundId, p_votes: votes }),
 
   chatHistory: async (leagueId: string): Promise<ChatMessage[]> => {
@@ -116,6 +123,12 @@ export const api = {
   },
 
   /** Movie search goes through our server route so the TMDb key never reaches the browser. */
+  checkVideo: async (id: string): Promise<{ id: string; title: string; channel: string | null }> => {
+    const res = await fetch(`/api/video/check?id=${encodeURIComponent(id)}`);
+    const body = await res.json().catch(() => null);
+    if (!res.ok) throw new Error(body?.error ?? "Couldn't check that video");
+    return body;
+  },
   searchMovies: async (query: string): Promise<Movie[]> => {
     const { data } = await supabase().auth.getSession();
     const res = await fetch(`/api/movies/search?q=${encodeURIComponent(query)}`, {

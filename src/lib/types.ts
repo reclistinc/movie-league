@@ -53,6 +53,8 @@ export interface MySubmission extends Movie {
   video_key?: string | null;
   video_name?: string | null;
   video_type?: string | null;
+  video_start?: number | null;
+  video_end?: number | null;
 }
 
 export interface VotingPick extends Movie {
@@ -62,6 +64,8 @@ export interface VotingPick extends Movie {
   video_key?: string | null;
   video_name?: string | null;
   video_type?: string | null;
+  video_start?: number | null;
+  video_end?: number | null;
   is_mine: boolean;
 }
 
@@ -90,6 +94,8 @@ export interface ResultPick extends Movie {
   video_key?: string | null;
   video_name?: string | null;
   video_type?: string | null;
+  video_start?: number | null;
+  video_end?: number | null;
   points: number;
   seen_by?: number | null; // other players who'd seen it / wanted to, frozen when the round finished
   want_by?: number | null;
@@ -157,7 +163,9 @@ export interface TrendingMovie {
 export interface MovieVideo {
   key: string; // YouTube video id
   name: string;
-  type: string; // Trailer | Teaser | Clip
+  type: string; // Trailer | Teaser | Clip, or Custom for a clip the player pasted in
+  start?: number | null; // seconds (custom clips)
+  end?: number | null;
 }
 
 export interface MovieDetails {

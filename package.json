@@ -9,7 +9,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test:db": "bash supabase/tests/run.sh",
-    "test:rank": "node --experimental-strip-types tests/rank.test.ts"
+    "test:rank": "node --experimental-strip-types tests/rank.test.ts",
+    "test:youtube": "node --experimental-strip-types tests/youtube.test.ts"
   },
   "dependencies": {
     "@fontsource/bebas-neue": "^5.3.0",

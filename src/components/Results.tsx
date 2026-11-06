@@ -4,6 +4,7 @@ import { Bookmark, Eye, Gem, Trophy } from "lucide-react";
 import type { LeagueState, ResultPick, Round } from "@/lib/types";
 import { roundCaption } from "@/lib/themes";
 import { BackdropCard, TrailerButton } from "./media";
+import { api } from "@/lib/api";
 import { Avatar, Poster, memberMap } from "./ui";
 import { PickGif } from "./GifPicker";
 import { PlayerLink } from "./PlayerCard";
@@ -17,6 +18,9 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
   const watch = useWatchMarks(picks.filter((p) => p.user_id !== state.me).map((p) => p.tmdb_id));
   const gem = hiddenGem(round, picks);
   const hasCounts = (round.markers ?? 0) > 0;
+  const removeClip = state.league?.is_commissioner
+    ? (id: string) => () => void api.removePickVideo(id).catch((e: Error) => alert(e.message))
+    : null;
 
   return (
     <div className="space-y-3">
@@ -46,7 +50,7 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
                   </PlayerLink>
                 </div>
                 <div className="mt-2">
-                  <TrailerButton tmdbId={winner.tmdb_id} title={winner.title} chosen={winner} />
+                  <TrailerButton tmdbId={winner.tmdb_id} title={winner.title} chosen={winner} onRemove={removeClip?.(winner.id)} />
                 </div>
               </div>
             </div>
@@ -88,7 +92,7 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
                   <Avatar avatar={m?.avatar ?? ""} size={18} /> picked by {m?.display_name ?? "Former player"}
                 </PlayerLink>
                 <span className="ml-auto">
-                  <TrailerButton tmdbId={p.tmdb_id} title={p.title} compact chosen={p} />
+                  <TrailerButton tmdbId={p.tmdb_id} title={p.title} compact chosen={p} onRemove={removeClip?.(p.id)} />
                 </span>
               </div>
               {p.note && <div className="mt-1 text-[13px]">{p.note}</div>}

@@ -85,8 +85,17 @@ select pg_temp.check(jsonb_array_length(public.get_league_state(:'lid')->'rounds
 select pg_temp.expect_error(format('select public.submit_pick(%L, 107, %L, 2000, null, null, %L)', :'r1', 'Snatch', 'https://evil.example/x.gif'), 'GIPHY');
 select pg_temp.as_user('c');
 select pg_temp.expect_error(format('select public.submit_pick(%L, 107, %L, 2000, null, null, null, %L)', :'r1', 'Snatch', 'not a key'), 'can''t be attached');
-select public.submit_pick(:'r1', 107, 'Snatch', 2000, null, null, 'https://media1.giphy.com/media/abc/giphy.gif', 'dQw4w9WgXcQ', 'Official Trailer', 'Trailer');
+-- custom clip with a start/end time (last pick in -> round moves to voting)
+select pg_temp.expect_error(format('select public.submit_pick(%L, 107, %L, 2000, null, null, null, %L, %L, %L, 90, 60)', :'r1', 'Snatch', 'dQw4w9WgXcQ', 'Scene', 'Custom'), 'after the start');
+select public.submit_pick(:'r1', 107, 'Snatch', 2000, null, null, 'https://media1.giphy.com/media/abc/giphy.gif', 'dQw4w9WgXcQ', 'The dog scene', 'Custom', 83, 140);
 select pg_temp.check((select status = 'voting' from public.rounds where id = :'r1'), 'auto-advance to voting once all submitted');
+select public.get_league_state(:'lid') as st \gset
+select pg_temp.check((select (x->>'video_start')::int = 83 and (x->>'video_end')::int = 140 and x->>'video_type' = 'Custom'
+                      from jsonb_array_elements((:'st'::jsonb)->'current'->'submissions') x where x->>'tmdb_id' = '107'), 'voters get the clip times');
+reset role;
+select id as snatch from public.submissions where round_id = :'r1' and tmdb_id = 107 \gset
+set role authenticated;
+select pg_temp.expect_error(format('select public.remove_pick_video(%L)', :'snatch'), 'Only the commissioner');
 select pg_temp.as_user('a');
 select pg_temp.expect_error(format('select public.submit_pick(%L, 5, %L)', :'r1', 'X'), 'closed');
 
@@ -95,7 +104,11 @@ select public.get_league_state(:'lid') as st \gset
 select pg_temp.check(jsonb_array_length((:'st'::jsonb)->'current'->'submissions') = 3, 'voters see all picks');
 select pg_temp.check(not ((:'st'::jsonb)->'current'->'submissions'->0 ? 'user_id'), 'picks are anonymous during voting');
 select pg_temp.check(exists (select 1 from jsonb_array_elements((:'st'::jsonb)->'current'->'submissions') e where e->>'gif_url' like 'https://media1.giphy.com/%'), 'GIF visible during voting');
-select pg_temp.check(exists (select 1 from jsonb_array_elements((:'st'::jsonb)->'current'->'submissions') e where e->>'video_key' = 'dQw4w9WgXcQ' and e->>'video_type' = 'Trailer'), 'chosen video visible during voting');
+select pg_temp.check(exists (select 1 from jsonb_array_elements((:'st'::jsonb)->'current'->'submissions') e where e->>'video_key' = 'dQw4w9WgXcQ' and e->>'video_type' = 'Custom'), 'chosen video visible during voting');
+select public.remove_pick_video(:'snatch');
+select public.get_league_state(:'lid') as st \gset
+select pg_temp.check((select x->>'video_type' = 'none' and x->>'video_key' is null
+                      from jsonb_array_elements((:'st'::jsonb)->'current'->'submissions') x where x->>'tmdb_id' = '107'), 'commissioner removed the clip');
 select pg_temp.check(((:'st'::jsonb)->'current'->'live_totals') = 'null', 'totals hidden before locking in');
 
 select id as s_a from public.get_league_state(:'lid') x, jsonb_to_recordset(x->'current'->'submissions') as t(id uuid, title text) where title = 'Heat' \gset
@@ -131,7 +144,7 @@ select public.get_league_state(:'lid') as st \gset
 select pg_temp.check(((:'st'::jsonb)->'results'->(:'r1')->0->>'title') = 'Heat'
                  and ((:'st'::jsonb)->'results'->(:'r1')->0->>'points')::int = 30, 'results ranked with totals');
 select pg_temp.check(jsonb_array_length((:'st'::jsonb)->'results'->(:'r1')->0->'votes') = 2, 'vote breakdown visible after round');
-select pg_temp.check(exists (select 1 from jsonb_array_elements((:'st'::jsonb)->'results'->(:'r1')) e where e->>'video_key' = 'dQw4w9WgXcQ'), 'chosen video kept in results');
+select pg_temp.check(exists (select 1 from jsonb_array_elements((:'st'::jsonb)->'results'->(:'r1')) e where e->>'tmdb_id' = '107' and e->>'video_type' = 'none'), 'removed clip stays removed in results');
 select pg_temp.check(((:'st'::jsonb)->'standings'->0->>'user_id') like '%a'
                  and ((:'st'::jsonb)->'standings'->0->>'round_wins')::int = 1, 'standings computed');
 select pg_temp.check(jsonb_array_length((:'st'::jsonb)->'rounds'->1->'participant_ids') = 4, 'late joiner participates in round 2');
