@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Shield, Trash2, UserMinus } from "lucide-react";
+import { ChevronDown, RefreshCw, Shield, Trash2, UserMinus } from "lucide-react";
 import { api } from "@/lib/api";
 import type { LeagueState } from "@/lib/types";
 import { Avatar, ErrorText } from "./ui";
 
-/** Commissioner-only: remove players, end the season early, delete the league. Collapsed by default. */
+/** Commissioner-only: remove players, reset the invite code, end the season early, delete the league. Collapsed by default. */
 export function CommissionerTools({ state, onChange }: { state: LeagueState; onChange: () => void }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -65,7 +65,7 @@ export function CommissionerTools({ state, onChange }: { state: LeagueState; onC
                       onClick={() => {
                         if (
                           confirm(
-                            `Remove ${m.display_name} from ${league.name}?\n\nTheir pick and votes in the current round are cleared. Finished rounds keep their history.`,
+                            `Remove ${m.display_name} from ${league.name}?\n\nTheir pick and votes in the current round are cleared. Finished rounds keep their history.\n\nTo stop them rejoining, reset the invite code afterwards.`,
                           )
                         )
                           run(() => api.removePlayer(league.id, m.user_id));
@@ -80,6 +80,29 @@ export function CommissionerTools({ state, onChange }: { state: LeagueState; onC
               ))}
             </div>
           </div>
+
+          {/* Invite code */}
+          {league.status !== "complete" && (
+            <div>
+              <div className="label mb-2">Invite code</div>
+              <p className="mb-2 text-xs" style={{ color: "var(--reel-grey)" }}>
+                Current code <span className="mono" style={{ color: "var(--marquee-gold)" }}>{league.invite_code}</span>.
+                Resetting makes a new code and the old link stops working — handy after removing someone. Current players
+                stay in; share the new link with anyone still to join.
+              </p>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  if (confirm(`Reset ${league.name}'s invite code?\n\nThe old link stops working right away.`))
+                    run(() => api.resetInviteCode(league.id));
+                }}
+                className="btn-ghost flex items-center gap-1.5 px-4 py-2 text-sm"
+              >
+                <RefreshCw size={14} /> Reset invite code
+              </button>
+            </div>
+          )}
 
           {/* End season */}
           {league.status === "active" && (

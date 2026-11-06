@@ -50,6 +50,7 @@ export const api = {
     rpc<void>("set_season_queue", { p_league_id: leagueId, p_rounds: rounds }),
   startSeason: (leagueId: string) => rpc<void>("start_season", { p_league_id: leagueId }),
 
+  resetInviteCode: (leagueId: string) => rpc<string>("reset_invite_code", { p_league_id: leagueId }),
   removePlayer: (leagueId: string, userId: string) => rpc<void>("remove_player", { p_league_id: leagueId, p_user_id: userId }),
   endSeason: (leagueId: string) => rpc<void>("end_season", { p_league_id: leagueId }),
   deleteLeague: (leagueId: string, confirmName: string) =>
