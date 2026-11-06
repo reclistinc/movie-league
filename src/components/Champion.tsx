@@ -20,7 +20,7 @@ export function ChampionCard({ champion, points }: { champion: Member; points?: 
       <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
         {bg && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={bg} alt="" className="absolute inset-0 h-full w-full object-contain" aria-hidden />
+          <img src={bg} alt="" className="absolute inset-0 h-full w-full object-cover object-center" aria-hidden />
         )}
         <div
           className="absolute inset-0"
