@@ -2,6 +2,7 @@
 
 import { Trophy } from "lucide-react";
 import type { LeagueState, ResultPick, Round } from "@/lib/types";
+import { roundCaption } from "@/lib/themes";
 import { BackdropCard, TrailerButton } from "./media";
 import { Avatar, Poster, memberMap } from "./ui";
 import { PickGif } from "./GifPicker";
@@ -19,6 +20,11 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
           <div className="display mt-0.5 text-[28px] leading-tight" style={{ color: "var(--marquee-gold)" }}>
             {round.theme}
           </div>
+          {roundCaption(round) && (
+            <p className="text-sm italic" style={{ color: "var(--reel-grey)" }}>
+              {roundCaption(round)}
+            </p>
+          )}
           {winner && (
             <div className="mt-4 flex items-end gap-4">
               <Poster movie={winner} width={96} />

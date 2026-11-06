@@ -4,6 +4,7 @@ import { Countdown } from "./Countdown";
 import { useEffect, useMemo, useState } from "react";
 import { Check, Clapperboard, Lock, Ticket } from "lucide-react";
 import { api } from "@/lib/api";
+import { roundCaption } from "@/lib/themes";
 import type { LeagueState, Movie, PickVideo, Round, VotingPick } from "@/lib/types";
 import { BackdropCard, TrailerButton, VideoChooser, useMovieDetails } from "./media";
 import { RoundResults } from "./Results";
@@ -38,9 +39,9 @@ export function RoundPanel({ state, onChange }: { state: LeagueState; onChange: 
         <div className="display mt-0.5 text-[28px] leading-tight" style={{ color: "var(--marquee-gold)" }}>
           {round.theme}
         </div>
-        {round.description && (
+        {roundCaption(round) && (
           <p className="mt-1 text-sm italic" style={{ color: "var(--reel-grey)" }}>
-            {round.description}
+            {roundCaption(round)}
           </p>
         )}
         <p className="mt-3">
@@ -86,9 +87,9 @@ function ThemeHeader({ round }: { round: Round }) {
       <div className="display mt-0.5 text-[28px] leading-tight" style={{ color: "var(--marquee-gold)" }}>
         {round.theme}
       </div>
-      {round.description && (
+      {roundCaption(round) && (
         <p className="text-sm italic" style={{ color: "var(--reel-grey)" }}>
-          {round.description}
+          {roundCaption(round)}
         </p>
       )}
       <p className="mono mt-1 text-xs" style={{ color: "var(--reel-grey)" }}>

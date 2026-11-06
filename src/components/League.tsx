@@ -4,6 +4,7 @@ import { Countdown } from "./Countdown";
 import { useCallback, useEffect, useState } from "react";
 import { Check, ChevronRight, Clapperboard, Ticket, Trophy, Users } from "lucide-react";
 import { api } from "@/lib/api";
+import { roundCaption } from "@/lib/themes";
 import { supabase } from "@/lib/supabase";
 import type { LeagueState, Round } from "@/lib/types";
 import { BackdropCard } from "./media";
@@ -243,6 +244,11 @@ function LiveRound({ round, state, onOpen }: { round: Round; state: LeagueState;
         <div className="display mt-0.5 text-[24px] leading-tight" style={{ color: "var(--marquee-gold)" }}>
           {round.theme}
         </div>
+        {roundCaption(round) && (
+          <p className="text-[13px] italic" style={{ color: "var(--reel-grey)" }}>
+            {roundCaption(round)}
+          </p>
+        )}
         <div className="mono mb-2.5 text-xs" style={{ color: "var(--reel-grey)" }}>
           {submitting ? "Submissions" : "Voting"} <Countdown to={deadline} />
         </div>

@@ -108,3 +108,10 @@ export function sampleThemes(n: number) {
   for (let i = 0; i < n && pool.length; i++) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
   return out;
 }
+
+/** A round's caption: its own description, or the matching theme idea's summary. */
+export function roundCaption(round: { theme: string; description: string | null }): string | null {
+  if (round.description?.trim()) return round.description;
+  const t = round.theme.trim().toLowerCase();
+  return THEMES.find((x) => x.title.toLowerCase() === t)?.summary ?? null;
+}
