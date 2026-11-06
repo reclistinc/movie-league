@@ -101,8 +101,8 @@ function Row({ item, onSeen, onRemove }: { item: WatchlistItem; onSeen: () => vo
               <button
                 type="button"
                 onClick={onSeen}
-                className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                style={{ border: "1px solid var(--marquee-gold)", color: "var(--marquee-gold)", background: "rgba(240,180,41,0.12)" }}
+                className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold hover:text-[var(--marquee-gold)]"
+                style={{ border: "1px solid rgba(245,241,230,0.22)", color: "var(--screen-white)" }}
               >
                 <Eye size={12} /> Watched it
               </button>
