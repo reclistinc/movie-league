@@ -29,6 +29,7 @@ export function Join({ code }: { code: string }) {
   if (preview === undefined) return <p style={{ color: "var(--reel-grey)" }}>Loading invite…</p>;
   if (preview === null) return <div className="card p-5">That invite code doesn&apos;t match any league.</div>;
   if (preview.status === "complete") return <div className="card p-5">{preview.name}&apos;s season is already over.</div>;
+  if (preview.member_count >= 20) return <div className="card p-5">{preview.name} is full — it already has 20 players.</div>;
 
   async function join(e: React.FormEvent) {
     e.preventDefault();

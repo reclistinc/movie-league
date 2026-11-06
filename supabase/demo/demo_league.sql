@@ -11,7 +11,13 @@
 --      you want the game to move on — after you've submitted or voted yourself:
 --        select public.demo_bots_act();
 --
---   3) Remove the demo league and pretend players when you're done:
+--   3) Skip to the end: a finished league with random rounds, picks, votes and a random
+--      champion. Optionally force which avatar wins, or make one for every avatar:
+--        select public.demo_champion_league('you@example.com');              -- random champion
+--        select public.demo_champion_league('you@example.com', 'wizard');    -- the Wizard wins
+--        select public.demo_champion_all('you@example.com');                 -- 20 leagues, one per avatar
+--
+--   4) Remove all demo leagues and pretend players when you're done:
 --        select public.demo_cleanup();
 --
 -- The four pretend players are accounts with no password that can't sign in.
@@ -240,13 +246,158 @@ returns text
 language plpgsql security definer set search_path = ''
 as $$
 begin
-  delete from public.leagues where name = 'Demo League' and invite_code like 'DEMO%';
+  delete from public.leagues where invite_code like 'DEMO%';
   delete from auth.users where id in (select user_id from public._demo_bots());
-  return 'Demo league and pretend players removed.';
+  return 'All demo leagues and pretend players removed.';
+end;
+$$;
+
+create or replace function public._demo_themes()
+returns table (title text, summary text)
+language sql immutable
+as $$
+  values
+    ('The Villain Had a Point', 'The bad guy''s plan makes uncomfortable amounts of sense.'),
+    ('Worst Vacation Ever', 'A trip that goes hilariously, catastrophically wrong.'),
+    ('Everybody''s Lying to Everybody', 'A web of deception nobody can keep straight.'),
+    ('A Heist That Was Obviously a Bad Idea', 'The plan has more holes than a heist should.'),
+    ('Small Town, Big Secret', 'A quiet place hiding something it really shouldn''t.'),
+    ('Time Is Not on Your Side', 'Loops, deadlines, or a ticking clock running the show.'),
+    ('The Robot Has Feelings', 'A machine that turns out more human than the humans.'),
+    ('One Wild Night', 'Everything happens between sundown and sunrise.'),
+    ('The Underdog Pulls It Off', 'Nobody believed in them, and then…'),
+    ('Monsters Among Us', 'Something terrible is hiding in plain sight.'),
+    ('Road Trip Gone Sideways', 'The journey matters more than the destination. Unfortunately.'),
+    ('The Mentor Was Right', 'Wise words, ignored until it was almost too late.');
+$$;
+
+create or replace function public._demo_ensure_bots()
+returns void
+language sql security definer set search_path = ''
+as $$
+  insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+                          created_at, updated_at, raw_app_meta_data, raw_user_meta_data,
+                          confirmation_token, recovery_token, email_change_token_new, email_change)
+  select '00000000-0000-0000-0000-000000000000', d.user_id, 'authenticated', 'authenticated',
+         lower(d.name) || '@demo.movieleague.invalid', '', now(), now(), now(),
+         '{"provider":"email","providers":["email"]}', jsonb_build_object('demo', true), '', '', '', ''
+  from public._demo_bots() d
+  on conflict (id) do nothing;
+$$;
+
+-- A finished league: random rounds, picks and votes, random champion (or force an avatar to win).
+create or replace function public.demo_champion_league(p_email text, p_avatar text default null)
+returns text
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  me uuid;
+  lid uuid;
+  rid uuid;
+  n_rounds int := 4 + floor(random() * 3)::int;  -- 4 to 6 rounds
+  started timestamptz := now() - make_interval(days => 6 * n_rounds + 1);
+  avatars text[];
+  players uuid[];
+  names text[];
+  i int;
+  th record;
+  leader uuid;
+  holder uuid;
+  leader_avatar text;
+  all_avatars text[] := array['detective','wizard','astronaut','robot','ghost','alien','cowboy','vampire','ninja','pirate',
+                              'hero','scientist','explorer','knight','monster','star','rager','lizard','cyborg','guardian'];
+begin
+  select id into me from auth.users where lower(email) = lower(btrim(p_email));
+  if me is null then
+    raise exception 'No account for %. Sign into the app with that email first.', p_email;
+  end if;
+  if p_avatar is not null and not (p_avatar = any (all_avatars)) then
+    raise exception 'Unknown avatar %. Use one of: %', p_avatar, array_to_string(all_avatars, ', ');
+  end if;
+  perform public._demo_ensure_bots();
+
+  players := array[me] || array(select user_id from public._demo_bots());
+  names := array[coalesce((select display_name from public.league_members where user_id = me order by joined_at desc limit 1), 'You')]
+           || array(select name from public._demo_bots());
+  avatars := array(select a from unnest(all_avatars) a order by random() limit 5);
+
+  insert into public.leagues (name, commissioner_id, vote_budget, invite_code, status, created_at, started_at, completed_at)
+  values ('Champion Demo' || coalesce(' — ' || initcap(p_avatar), ''), me, 20,
+          'DEMO' || upper(substr(md5(random()::text), 1, 4)), 'active', started - interval '1 day', started, null)
+  returning id into lid;
+
+  for i in 1 .. 5 loop
+    insert into public.league_members (league_id, user_id, display_name, avatar, joined_at)
+    values (lid, players[i], names[i], avatars[i], started - interval '1 day');
+  end loop;
+
+  i := 0;
+  for th in select * from public._demo_themes() order by random() limit n_rounds loop
+    i := i + 1;
+    insert into public.rounds (league_id, position, theme, description, status, submissions_opened_at, submission_deadline,
+                               voting_opened_at, voting_deadline, completed_at)
+    values (lid, i, th.title, th.summary, 'complete',
+            started + make_interval(days => 6 * (i - 1)), started + make_interval(days => 6 * (i - 1) + 3),
+            started + make_interval(days => 6 * (i - 1) + 3), started + make_interval(days => 6 * i),
+            started + make_interval(days => 6 * i))
+    returning id into rid;
+
+    insert into public.submissions (round_id, user_id, tmdb_id, title, release_year, created_at)
+    select rid, p.uid, m.tmdb_id, m.title, m.release_year, started + make_interval(days => 6 * (i - 1))
+    from (select uid, row_number() over () as k from unnest(players) uid) p
+    join (select *, row_number() over (order by random()) as k from public._demo_pool()) m on m.k = p.k;
+
+    perform public._demo_cast(rid, uid) from unnest(players) uid;
+  end loop;
+
+  -- Who won? (same ordering as the app's standings: points, then round wins)
+  select s.user_id into leader
+  from (
+    select sub.user_id, sum(coalesce(v.points, 0)) as pts
+    from public.submissions sub join public.rounds r on r.id = sub.round_id and r.league_id = lid
+    left join public.votes v on v.submission_id = sub.id
+    group by sub.user_id
+  ) s order by s.pts desc, random() limit 1;
+
+  -- Force the champion's avatar if asked (swap with whoever had it).
+  if p_avatar is not null then
+    select avatar into leader_avatar from public.league_members where league_id = lid and user_id = leader;
+    select user_id into holder from public.league_members where league_id = lid and avatar = p_avatar;
+    if holder is not null and holder <> leader then
+      update public.league_members set avatar = leader_avatar where league_id = lid and user_id = holder;
+    end if;
+    update public.league_members set avatar = p_avatar where league_id = lid and user_id = leader;
+  end if;
+
+  insert into public.chat_messages (league_id, user_id, body, created_at)
+  values (lid, players[2], 'What a season 🍿', now() - interval '2 hours'),
+         (lid, leader, 'Thank you, thank you 🏆', now() - interval '1 hour');
+
+  update public.leagues set status = 'complete', completed_at = now(), version = version + 1 where id = lid;
+  return format('Created "%s" — %s rounds. Champion: %s (%s).',
+    (select name from public.leagues where id = lid), n_rounds,
+    (select display_name from public.league_members where league_id = lid and user_id = leader),
+    (select avatar from public.league_members where league_id = lid and user_id = leader));
+end;
+$$;
+
+-- One finished league per avatar, each won by that avatar.
+create or replace function public.demo_champion_all(p_email text)
+returns text
+language plpgsql security definer set search_path = ''
+as $$
+declare a text;
+begin
+  foreach a in array array['detective','wizard','astronaut','robot','ghost','alien','cowboy','vampire','ninja','pirate',
+                           'hero','scientist','explorer','knight','monster','star','rager','lizard','cyborg','guardian'] loop
+    perform public.demo_champion_league(p_email, a);
+  end loop;
+  return 'Created 20 Champion Demo leagues, one won by each avatar.';
 end;
 $$;
 
 -- Only callable from the SQL Editor (as the database owner), never from the app.
 revoke execute on function public._demo_bots(), public._demo_pool(), public._demo_league(),
-  public._demo_cast(uuid, uuid), public.demo_create_league(text), public.demo_bots_act(), public.demo_cleanup()
+  public._demo_cast(uuid, uuid), public.demo_create_league(text), public.demo_bots_act(), public.demo_cleanup(),
+  public._demo_themes(), public._demo_ensure_bots(), public.demo_champion_league(text, text), public.demo_champion_all(text)
   from public, anon, authenticated;
