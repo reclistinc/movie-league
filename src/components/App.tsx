@@ -21,8 +21,15 @@ export function App() {
   const params = useSearchParams();
   const router = useRouter();
   const [session, setSession] = useState<Session | null | undefined>(undefined);
-  const [linkError, setLinkError] = useState<string | null>(null);
+  // If Supabase sent us back with an error (expired / already-used link), show it.
+  const [linkError, setLinkError] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const p = new URLSearchParams(window.location.hash.slice(1) || window.location.search.slice(1));
+    const desc = p.get("error_description");
+    return desc ? `Sign-in link problem: ${desc.replace(/\+/g, " ")}. Request a new link below.` : null;
+  });
   const tokenHash = params.get("token_hash");
+  const code = params.get("code");
 
   useEffect(() => {
     const sb = supabase();
@@ -48,11 +55,23 @@ export function App() {
       });
   }, [tokenHash, router]);
 
+  // Links from emails requested by an older version of the app arrive as ?code=… (PKCE).
+  useEffect(() => {
+    if (!code) return;
+    supabase()
+      .auth.exchangeCodeForSession(code)
+      .then(({ error }) => {
+        if (error)
+          setLinkError("That link has to be opened in the same browser you requested it from. Request a new link below — it will work from any browser.");
+        router.replace("/");
+      });
+  }, [code, router]);
+
   const join = params.get("join");
   const league = params.get("league");
 
   let body;
-  if (tokenHash) body = <p style={{ color: "var(--reel-grey)" }}>Signing you in…</p>;
+  if (tokenHash || code) body = <p style={{ color: "var(--reel-grey)" }}>Signing you in…</p>;
   else if (session === undefined) body = <p style={{ color: "var(--reel-grey)" }}>Loading…</p>;
   else if (!session) body = <Login inviteCode={join} />;
   else if (join) body = <Join code={join} />;
