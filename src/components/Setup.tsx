@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { ChevronRight, Clapperboard, Plus, Users } from "lucide-react";
 import { api } from "@/lib/api";
-import { THEMES, sampleThemes } from "@/lib/themes";
+import { THEMES } from "@/lib/themes";
 import type { LeagueState } from "@/lib/types";
 import { Avatar, ErrorText, InviteLink, Marquee, SectionTitle } from "./ui";
 import { CommissionerTools } from "./CommissionerTools";
 
 type QueueItem = { theme: string; description: string };
+
+const themesAZ = [...THEMES].sort((a, b) => a.title.localeCompare(b.title));
 
 // Commissioner plans the whole season queue before starting; everyone else sees the lobby.
 export function Setup({ state, onChange }: { state: LeagueState; onChange: () => void }) {
@@ -18,7 +20,6 @@ export function Setup({ state, onChange }: { state: LeagueState; onChange: () =>
   const [themeInput, setThemeInput] = useState("");
   const [themeSummary, setThemeSummary] = useState("");
   const [showBrowser, setShowBrowser] = useState(false);
-  const [browserSample, setBrowserSample] = useState<{ title: string; summary: string }[]>([]); // filled when the browser opens
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const dirty = JSON.stringify(queue) !== JSON.stringify(saved);
@@ -142,66 +143,61 @@ export function Setup({ state, onChange }: { state: LeagueState; onChange: () =>
               <input
                 className="field min-w-[180px] flex-1"
                 maxLength={120}
-                placeholder="e.g. a movie set in one location"
+                placeholder="Round theme, e.g. a movie set in one location"
                 value={themeInput}
-                onChange={(e) => {
-                  setThemeInput(e.target.value);
-                  setThemeSummary("");
-                }}
+                onChange={(e) => setThemeInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addToQueue())}
               />
               <button onClick={surpriseMe} title="Surprise me" className="btn-ghost px-3.5 text-lg">
                 🎲
               </button>
-              <button onClick={addToQueue} disabled={!themeInput.trim()} className="btn-primary flex items-center gap-1.5 px-4">
-                <Plus size={16} /> Add round
-              </button>
             </div>
-            <select
-              value=""
-              onChange={(e) => {
-                const t = THEMES.find((x) => x.title === e.target.value);
-                if (t) pickTheme(t);
-              }}
-              className="field mono mt-2 text-sm"
-            >
-              <option value="">Or pick from all {THEMES.length} theme ideas…</option>
-              {THEMES.map((t) => (
-                <option key={t.title} value={t.title}>
-                  {t.title}
-                </option>
-              ))}
-            </select>
-            {themeSummary && (
-              <p className="mt-2 text-[13px] italic" style={{ color: "var(--marquee-gold)" }}>
-                {themeSummary}
-              </p>
-            )}
+            <textarea
+              className="field mt-2 resize-y text-sm"
+              rows={2}
+              maxLength={500}
+              placeholder="Description (optional) — what kind of movie fits this round?"
+              value={themeSummary}
+              onChange={(e) => setThemeSummary(e.target.value)}
+            />
+            <button onClick={addToQueue} disabled={!themeInput.trim()} className="btn-primary mt-2 flex items-center gap-1.5 px-4 py-2.5">
+              <Plus size={16} /> Add round
+            </button>
+
             <button
-              onClick={() => {
-                if (!showBrowser) setBrowserSample(sampleThemes(8));
-                setShowBrowser(!showBrowser);
-              }}
-              className="btn-ghost mt-3 px-3 py-1.5 text-xs"
+              onClick={() => setShowBrowser(!showBrowser)}
+              className="btn-ghost mt-4 block px-3 py-1.5 text-xs"
               style={{ color: "var(--reel-grey)" }}
             >
-              {showBrowser ? "Hide idea cards" : "Browse theme ideas"}
+              {showBrowser ? "Hide theme ideas" : `Browse all ${THEMES.length} theme ideas (A–Z)`}
             </button>
             {showBrowser && (
-              <div className="mt-3">
+              <div className="mt-3 max-h-80 overflow-y-auto pr-1">
                 <div className="flex flex-col gap-1.5">
-                  {browserSample.map((t) => (
-                    <button key={t.title} onClick={() => pickTheme(t)} className="inset px-3 py-2 text-left">
-                      <div className="text-sm font-bold">{t.title}</div>
-                      <div className="mt-0.5 text-xs" style={{ color: "var(--reel-grey)" }}>
-                        {t.summary}
-                      </div>
-                    </button>
-                  ))}
+                  {themesAZ.map((t) => {
+                    const added = queue.some((q) => q.theme.toLowerCase() === t.title.toLowerCase());
+                    return (
+                      <button
+                        key={t.title}
+                        onClick={() => pickTheme(t)}
+                        className="inset px-3 py-2 text-left"
+                        style={{ opacity: added ? 0.45 : 1 }}
+                      >
+                        <div className="flex items-center justify-between gap-2 text-sm font-bold">
+                          {t.title}
+                          {added && (
+                            <span className="mono text-[10px] font-normal uppercase" style={{ color: "var(--marquee-gold)" }}>
+                              in queue
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-0.5 text-xs" style={{ color: "var(--reel-grey)" }}>
+                          {t.summary}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
-                <button onClick={() => setBrowserSample(sampleThemes(8))} className="btn-ghost mono mt-2 px-3 py-1.5 text-xs">
-                  Show 8 more
-                </button>
               </div>
             )}
           </>
