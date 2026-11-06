@@ -212,7 +212,7 @@ begin
       select p.* into pick from public._demo_pool() p
       where not exists (select 1 from public.submissions s where s.round_id = r.id and s.tmdb_id = p.tmdb_id)
         and not exists (select 1 from public.submissions s join public.rounds rr on rr.id = s.round_id
-                        where rr.league_id = r.league_id and s.user_id = b.user_id and s.tmdb_id = p.tmdb_id)
+                        where rr.league_id = r.league_id and s.user_id = d.user_id and s.tmdb_id = p.tmdb_id)
       order by random() limit 1;
       insert into public.submissions (round_id, user_id, tmdb_id, title, release_year, note)
       values (r.id, d.user_id, pick.tmdb_id, pick.title, pick.release_year,
