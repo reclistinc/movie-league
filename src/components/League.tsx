@@ -336,8 +336,8 @@ function Standings({ state }: { state: LeagueState }) {
                         {s.round_wins}× 🏆
                       </span>
                     )}
-                    {i > 0 && state.standings[i - 1].points === s.points && (
-                      <TiebreakTag rule={decidingRule(state.standings[i - 1], s)} />
+                    {state.standings[i + 1]?.points === s.points && (
+                      <TiebreakTag rule={decidingRule(s, state.standings[i + 1])} />
                     )}
                   </span>
                   <span className="mono" style={{ color: "var(--marquee-gold)" }}>
