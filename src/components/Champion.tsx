@@ -16,35 +16,36 @@ export function ChampionCard({ champion, points }: { champion: Member; points?: 
 
   return (
     <div className="card relative overflow-hidden text-center" style={{ borderColor: "rgba(240,180,41,0.6)" }}>
-      {bg && (
+      {/* Full, uncropped 16:9 movie frame on top so faces aren't cut off; winner sits below over a fade. */}
+      <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
+        {bg && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={bg} alt="" className="absolute inset-0 h-full w-full object-contain" aria-hidden />
+        )}
         <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${bg})`, opacity: 0.85 }}
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(180deg, rgba(18,19,31,0) 55%, rgba(28,30,51,0.85) 88%, rgba(28,30,51,1) 100%)" }}
           aria-hidden
         />
-      )}
-      <div
-        className="absolute inset-0"
-        style={{ background: "radial-gradient(ellipse at center, rgba(18,19,31,0.35) 0%, rgba(18,19,31,0.8) 70%, rgba(18,19,31,0.92) 100%)" }}
-        aria-hidden
-      />
+      </div>
+
       <div className="confetti" aria-hidden>
-        {Array.from({ length: 28 }).map((_, i) => (
+        {Array.from({ length: 90 }).map((_, i) => (
           <span
             key={i}
             style={{
-              left: `${(i * 37) % 100}%`,
+              left: `${(i * 37 + (i % 7) * 11) % 100}%`,
               background: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-              animationDelay: `${(i % 9) * 0.45}s`,
-              animationDuration: `${3.2 + (i % 5) * 0.5}s`,
-              width: i % 3 === 0 ? 6 : 8,
-              height: i % 3 === 0 ? 10 : 5,
+              animationDelay: `${((i * 0.29) % 5).toFixed(2)}s`,
+              animationDuration: `${(3 + (i % 6) * 0.45).toFixed(2)}s`,
+              width: i % 3 === 0 ? 6 : i % 3 === 1 ? 9 : 5,
+              height: i % 3 === 0 ? 11 : i % 3 === 1 ? 5 : 7,
             }}
           />
         ))}
       </div>
 
-      <div className="relative z-10 px-5 py-7">
+      <div className="relative z-10 -mt-14 px-5 pb-6">
         <Trophy size={30} color="var(--marquee-gold)" className="mx-auto drop-shadow-[0_0_10px_rgba(240,180,41,0.7)]" />
         <div className="label mt-1" style={{ color: "var(--screen-white)" }}>
           Season champion

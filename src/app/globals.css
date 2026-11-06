@@ -161,7 +161,7 @@
 }
 @keyframes confetti-fall {
   0% { transform: translateY(0) rotate(0deg); }
-  100% { transform: translateY(260px) rotate(540deg); opacity: 0.2; }
+  100% { transform: translateY(520px) rotate(720deg); opacity: 0.15; }
 }
 @media (prefers-reduced-motion: reduce) {
   .confetti { display: none; }
