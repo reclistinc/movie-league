@@ -7,7 +7,7 @@ import type { WatchStatus } from "@/lib/types";
 
 const OPTIONS: { id: WatchStatus; label: string; Icon: typeof Eye }[] = [
   { id: "seen", label: "Seen", Icon: Eye },
-  { id: "unseen", label: "Unseen", Icon: EyeOff },
+  { id: "unseen", label: "Not Seen", Icon: EyeOff },
   { id: "want", label: "Watchlist", Icon: Bookmark },
 ];
 
@@ -48,7 +48,7 @@ export function useWatchMarks(tmdbIds: number[]) {
   return { marks, set };
 }
 
-/** Seen · Unseen · Watchlist — pick one, tap again to clear. */
+/** Seen · Not Seen · Watchlist — pick one, tap again to clear. */
 export function WatchMarks({ value, onChange }: { value: WatchStatus | undefined; onChange: (s: WatchStatus | null) => void }) {
   return (
     <div className="flex flex-wrap gap-1" role="group" aria-label="Have you seen it?">
@@ -60,14 +60,14 @@ export function WatchMarks({ value, onChange }: { value: WatchStatus | undefined
             type="button"
             aria-pressed={on}
             onClick={() => onChange(on ? null : id)}
-            className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold transition-colors"
+            className="flex items-center gap-[3px] whitespace-nowrap rounded-full px-[7px] py-1 text-[11px] font-semibold transition-colors"
             style={{
               border: `1px solid ${on ? "var(--marquee-gold)" : "rgba(245,241,230,0.22)"}`,
               background: on ? "rgba(240,180,41,0.18)" : "rgba(18,19,31,0.6)",
               color: on ? "var(--marquee-gold)" : "var(--reel-grey)",
             }}
           >
-            <Icon size={12} /> {label}
+            <Icon size={11} /> {label}
           </button>
         );
       })}
