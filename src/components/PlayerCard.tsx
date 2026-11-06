@@ -6,6 +6,7 @@ import { Eye, Film, Heart, Trophy, X } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Member, PlayerCard as Card } from "@/lib/types";
 import { Avatar, Poster } from "./ui";
+import { AVATAR_MAP } from "./art";
 
 // ---------------------------------------------------------------------------
 // Tap any player's avatar or name to open their card.
@@ -154,6 +155,7 @@ function PlayerCardModal({
               {userId === me && <span className="text-xl" style={{ color: "var(--reel-grey)" }}> (you)</span>}
             </div>
             <div className="mt-1 text-xs" style={{ color: "var(--reel-grey)" }}>
+              {AVATAR_MAP[avatar] && <span style={{ color: "var(--screen-white)" }}>The {AVATAR_MAP[avatar].label} · </span>}
               {card?.is_commissioner && <span style={{ color: "var(--marquee-gold)" }}>★ Commissioner · </span>}
               {card?.joined_at
                 ? `Joined ${new Date(card.joined_at).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}`

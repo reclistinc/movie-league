@@ -36,7 +36,9 @@ export function AvatarPicker({
   onChange: (v: string) => void;
   taken?: string[];
 }) {
+  const selected = AVATAR_MAP[value];
   return (
+    <div>
     <div className="flex flex-wrap justify-center gap-2">
       {AVATAR_OPTIONS.map((a) => {
         const isTaken = taken.includes(a.id) && a.id !== value;
@@ -61,6 +63,11 @@ export function AvatarPicker({
           </button>
         );
       })}
+    </div>
+    {/* Phones have no hover, so name the chosen avatar under the grid. */}
+    <div className="display mt-2 h-6 text-center text-xl tracking-[0.06em]" style={{ color: "var(--marquee-gold)" }}>
+      {selected?.label ?? ""}
+    </div>
     </div>
   );
 }
