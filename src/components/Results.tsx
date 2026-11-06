@@ -49,6 +49,8 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
         const m = byId[p.user_id];
         return (
           <div key={p.id} className="ticket">
+            <BackdropCard tmdbId={p.tmdb_id} className="flex w-full">
+              <div className="flex w-full">
             <div className="shrink-0 p-2.5">
               <Poster movie={p} width={68} />
             </div>
@@ -105,6 +107,8 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
                 </div>
               )}
             </div>
+              </div>
+            </BackdropCard>
           </div>
         );
       })}
