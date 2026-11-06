@@ -16,6 +16,7 @@ import { Chat } from "./Chat";
 import { CommissionerTools } from "./CommissionerTools";
 import { ChampionCard } from "./Champion";
 import { PlayerCardProvider, PlayerLink } from "./PlayerCard";
+import { TiebreakTag, decidingRule } from "./Tiebreakers";
 
 type Page = "home" | "round" | "standings" | "chat" | "pastRound";
 
@@ -319,7 +320,7 @@ function Standings({ state }: { state: LeagueState }) {
                   className="flex items-center justify-between px-1 py-2"
                   style={{ borderBottom: i === state.standings.length - 1 ? "none" : "1px solid rgba(107,111,138,0.15)" }}
                 >
-                  <span className="flex items-center gap-2.5">
+                  <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
                     <span className="mono w-5" style={{ color: i === 0 ? "var(--marquee-gold)" : "var(--reel-grey)" }}>
                       {i + 1}
                     </span>
@@ -334,6 +335,9 @@ function Standings({ state }: { state: LeagueState }) {
                       <span className="mono text-[11px]" style={{ color: "var(--marquee-gold)" }}>
                         {s.round_wins}× 🏆
                       </span>
+                    )}
+                    {i > 0 && state.standings[i - 1].points === s.points && (
+                      <TiebreakTag rule={decidingRule(state.standings[i - 1], s)} />
                     )}
                   </span>
                   <span className="mono" style={{ color: "var(--marquee-gold)" }}>

@@ -3,7 +3,7 @@
 # Usage: PGHOST=/tmp PGPORT=5499 PGUSER=postgres ./run.sh
 set -euo pipefail
 cd "$(dirname "$0")"
-for t in game_loop commissioner cap invite_reset demo champion player_card watch_status; do
+for t in game_loop commissioner cap invite_reset demo champion player_card watch_status tiebreak; do
   DB="movie_league_test_$$_$t"
   createdb "$DB"
   psql -q -v ON_ERROR_STOP=1 -d "$DB" -f auth_stub.sql

@@ -97,6 +97,11 @@ export interface Standing {
   user_id: string;
   points: number;
   round_wins: number;
+  // tiebreakers (see supabase/migrations/20261106500000_tiebreakers.sql)
+  best_round?: number;
+  avg_voters?: number;
+  last_places?: number;
+  place?: number;
 }
 
 export interface LeagueState {
