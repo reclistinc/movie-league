@@ -62,11 +62,6 @@ export function ChampionCard({ champion, points }: { champion: Member; points?: 
             {points} pts
           </div>
         )}
-        {film && bg && (
-          <div className="mt-4 text-[10px] tracking-wide uppercase" style={{ color: "rgba(245,241,230,0.65)" }}>
-            Scene from {film.title}
-          </div>
-        )}
       </div>
     </div>
   );
