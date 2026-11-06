@@ -288,7 +288,6 @@ export function TrailerModal({
 }) {
   const [current, setCurrent] = useState(videos[0]);
   const [muted, setMuted] = useState(true); // starts muted so it can autoplay
-  const [paused, setPaused] = useState(false);
   const frame = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -338,47 +337,27 @@ export function TrailerModal({
             onLoad={() => {
               // Browsers reliably allow muted autoplay; nudge playback in case it didn't start.
               setMuted(true);
-              setPaused(false);
               setTimeout(() => send({ event: "command", func: "playVideo", args: [] }), 400);
             }}
           />
-          {/* Tap layer over the video: first tap turns the sound on, after that taps pause / play.
-              It also keeps YouTube's own overlay (title, settings, more videos) from popping up. */}
+        </div>
+        {/* Sound control sits below the player — YouTube doesn't allow anything drawn on top of it.
+            Tapping the video itself pauses / plays. */}
+        {muted && (
           <button
             type="button"
-            aria-label={muted ? "Turn sound on" : paused ? "Play" : "Pause"}
-            className="absolute inset-0 h-full w-full"
             onClick={() => {
-              if (muted) {
-                send({ event: "command", func: "unMute", args: [] });
-                send({ event: "command", func: "setVolume", args: [100] });
-                send({ event: "command", func: "playVideo", args: [] });
-                setMuted(false);
-                setPaused(false);
-              } else if (paused) {
-                send({ event: "command", func: "playVideo", args: [] });
-                setPaused(false);
-              } else {
-                send({ event: "command", func: "pauseVideo", args: [] });
-                setPaused(true);
-              }
+              send({ event: "command", func: "unMute", args: [] });
+              send({ event: "command", func: "setVolume", args: [100] });
+              send({ event: "command", func: "playVideo", args: [] });
+              setMuted(false);
             }}
+            className="btn-ghost mx-auto mt-2 flex items-center gap-1.5 px-3 py-1.5 text-xs"
           >
-            {muted && (
-              <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-[11px] text-white/90">
-                <VolumeX size={13} /> Tap for sound
-              </span>
-            )}
-            {paused && (
-              <span className="absolute inset-0 flex items-center justify-center bg-black/30">
-                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/60">
-                  <Play size={26} color="#fff" fill="#fff" />
-                </span>
-              </span>
-            )}
+            <VolumeX size={13} /> Tap for sound
           </button>
-        </div>
-        {isCustom(current) && (
+        )}
+                {isCustom(current) && (
           <p className="mt-2 text-center text-[11px]" style={{ color: "var(--reel-grey)" }}>
             Player&apos;s own clip{clipRange(current.start, current.end) && ` · ${clipRange(current.start, current.end)}`} · may contain
             spoilers
@@ -432,7 +411,7 @@ export function TrailerModal({
           </div>
         )}
         <p className="mt-2 text-center text-[11px]" style={{ color: "var(--reel-grey)" }}>
-          Tap the video for sound, tap again to pause. Tap outside it or press Close to go back.
+          Tap the video to pause. Tap outside it or press Close to go back.
         </p>
       </div>
     </div>,
