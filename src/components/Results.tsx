@@ -1,17 +1,21 @@
 "use client";
 
-import { Trophy } from "lucide-react";
+import { Bookmark, Eye, Gem, Trophy } from "lucide-react";
 import type { LeagueState, ResultPick, Round } from "@/lib/types";
 import { roundCaption } from "@/lib/themes";
 import { BackdropCard, TrailerButton } from "./media";
 import { Avatar, Poster, memberMap } from "./ui";
 import { PickGif } from "./GifPicker";
 import { PlayerLink } from "./PlayerCard";
+import { WatchMarks, useWatchMarks } from "./WatchMarks";
 
 /** Full breakdown of a finished round: winner hero + ranked ticket stubs with votes and comments. */
 export function RoundResults({ round, picks, state }: { round: Round; picks: ResultPick[]; state: LeagueState }) {
   const byId = memberMap(state.members);
   const winner = picks[0] && picks[0].points > 0 ? picks[0] : null;
+  const watch = useWatchMarks(picks.filter((p) => p.user_id !== state.me).map((p) => p.tmdb_id));
+  const gem = hiddenGem(round, picks);
+  const hasCounts = (round.markers ?? 0) > 0;
 
   return (
     <div className="space-y-3">
@@ -44,6 +48,17 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
                   <TrailerButton tmdbId={winner.tmdb_id} title={winner.title} chosen={winner} />
                 </div>
               </div>
+            </div>
+          )}
+          {gem && (
+            <div className="mt-3 flex items-center gap-2 text-sm">
+              <Gem size={15} color="#7dd3fc" />
+              <span>
+                <b style={{ color: "#7dd3fc" }}>Hidden Gem:</b> {gem.title}{" "}
+                <span style={{ color: "var(--reel-grey)" }}>
+                  — {gem.seen_by === 0 ? "nobody else had seen it" : `only ${gem.seen_by} had seen it`}, {gem.points} pts
+                </span>
+              </span>
             </div>
           )}
           {picks.length === 0 && (
@@ -88,6 +103,30 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
               </div>
               {p.note && <div className="mt-1 text-[13px]">{p.note}</div>}
               <PickGif url={p.gif_url} />
+              {(hasCounts || p === gem) && (
+                <div className="mono mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]" style={{ color: "var(--reel-grey)" }}>
+                  {p === gem && (
+                    <span className="flex items-center gap-1 font-bold uppercase" style={{ color: "#7dd3fc" }}>
+                      <Gem size={12} /> Hidden Gem
+                    </span>
+                  )}
+                  {hasCounts && (
+                    <span className="flex items-center gap-1">
+                      <Eye size={12} /> Seen by {p.seen_by ?? 0}
+                    </span>
+                  )}
+                  {hasCounts && (p.want_by ?? 0) > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Bookmark size={12} /> {p.want_by} want to watch
+                    </span>
+                  )}
+                </div>
+              )}
+              {p.user_id !== state.me && (
+                <div className="mt-2">
+                  <WatchMarks value={watch.marks[String(p.tmdb_id)]} onChange={(st) => watch.set(p.tmdb_id, st)} />
+                </div>
+              )}
               {p.votes.some((v) => v.points > 0) && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {p.votes
@@ -125,4 +164,16 @@ export function RoundResults({ round, picks, state }: { round: Round; picks: Res
       })}
     </div>
   );
+}
+
+/**
+ * The highest-scoring pick that the fewest other players had seen — only when enough people marked
+ * movies that round (2+) and fewer than half of them had seen it.
+ */
+function hiddenGem(round: Round, picks: ResultPick[]) {
+  const markers = round.markers ?? 0;
+  if (markers < 2) return null;
+  const candidates = picks.filter((p) => p.points > 0 && p.seen_by != null && p.seen_by * 2 < markers);
+  candidates.sort((a, b) => (a.seen_by ?? 0) - (b.seen_by ?? 0) || b.points - a.points);
+  return candidates[0] ?? null;
 }

@@ -30,6 +30,7 @@ export interface Round {
   voting_opened_at: string | null;
   voting_deadline: string | null;
   completed_at: string | null;
+  markers?: number | null; // players who marked Seen/Watchlist on anything this round (frozen at results)
   participant_ids: string[];
   submitted_ids: string[];
   voted_ids: string[];
@@ -90,6 +91,8 @@ export interface ResultPick extends Movie {
   video_name?: string | null;
   video_type?: string | null;
   points: number;
+  seen_by?: number | null; // other players who'd seen it / wanted to, frozen when the round finished
+  want_by?: number | null;
   votes: { voter_id: string; points: number; comment: string | null }[];
 }
 
@@ -210,6 +213,8 @@ export interface PlayerCard {
     rounds_played: number;
     rounds_complete: number;
     picks: PlayerCardPick[];
+    seen_picks: number | null; // null = never marked anything in this league
+    others_picks: number | null;
     biggest_fan: { user_id: string; points: number } | null;
     favorite: { user_id: string; points: number } | null;
   };
@@ -227,5 +232,22 @@ export interface PlayerCard {
   };
 }
 
-/** Your private mark on a movie: seen it, haven't, or on your watchlist. */
+/** Your private mark on a movie: seen it, or on your watchlist. ("unseen" is legacy, treated as no mark.) */
 export type WatchStatus = "seen" | "unseen" | "want";
+
+export interface WatchlistItem {
+  tmdb_id: number;
+  added_at: string;
+  title: string | null;
+  release_year: number | null;
+  poster_path: string | null;
+  from: {
+    league_id: string;
+    league_name: string;
+    round_position: number;
+    round_theme: string;
+    picker_id: string | null; // hidden until that round's results are out
+    picker_name: string | null;
+    picker_avatar: string | null;
+  } | null;
+}

@@ -89,8 +89,8 @@ function TiebreakRules({ highlight, onClose }: { highlight: number; onClose: () 
           })}
         </ol>
         <p className="mt-3 text-[11px]" style={{ color: "var(--reel-grey)" }}>
-          Only finished rounds count. Seen and Watchlist only count other players&apos; picks in this league, and
-          nobody&apos;s marks are ever shown.
+          Only finished rounds count. Seen and Watchlist count other players&apos; picks in this league, as marked
+          when each round&apos;s results came out. Nobody can see which movies you marked.
         </p>
       </div>
     </div>,

@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bookmark, Eye, EyeOff } from "lucide-react";
+import { Bookmark, Eye } from "lucide-react";
 import { api } from "@/lib/api";
 import type { WatchStatus } from "@/lib/types";
 
 const OPTIONS: { id: WatchStatus; label: string; Icon: typeof Eye }[] = [
   { id: "seen", label: "Seen", Icon: Eye },
-  { id: "unseen", label: "Not Seen", Icon: EyeOff },
   { id: "want", label: "Watchlist", Icon: Bookmark },
 ];
 
@@ -48,7 +47,7 @@ export function useWatchMarks(tmdbIds: number[]) {
   return { marks, set };
 }
 
-/** Seen · Not Seen · Watchlist — pick one, tap again to clear. */
+/** Seen · Watchlist — one or the other (or neither); tap again to clear. */
 export function WatchMarks({ value, onChange }: { value: WatchStatus | undefined; onChange: (s: WatchStatus | null) => void }) {
   return (
     <div className="flex flex-wrap gap-1" role="group" aria-label="Have you seen it?">

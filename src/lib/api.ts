@@ -9,6 +9,7 @@ import type {
   LeagueSummary,
   Movie,
   PickVideo,
+  WatchlistItem,
   WatchStatus,
   PlayerCard,
   VoteInput,
@@ -24,6 +25,7 @@ export const api = {
   myLeagues: () => rpc<LeagueSummary[]>("my_leagues"),
   playerCard: (leagueId: string, userId: string) =>
     rpc<PlayerCard>("get_player_card", { p_league_id: leagueId, p_user_id: userId }),
+  myWatchlist: () => rpc<WatchlistItem[]>("my_watchlist"),
   myWatchStatus: (tmdbIds: number[]) =>
     rpc<Record<string, WatchStatus>>("my_watch_status", { p_tmdb_ids: tmdbIds }),
   setWatchStatus: (tmdbId: number, status: WatchStatus | null) =>

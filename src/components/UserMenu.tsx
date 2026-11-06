@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { LogOut, UserRound, X } from "lucide-react";
+import { Bookmark, LogOut, UserRound, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 import { api } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
@@ -10,12 +11,13 @@ import { Avatar, AvatarPicker, ErrorText } from "./ui";
 
 type Membership = { league_id: string; display_name: string; avatar: string; joined_at: string };
 
-/** Your avatar in the top corner; tap for Profile and Sign out. */
+/** Your avatar in the top corner; tap for Profile, My Watchlist and Sign out. */
 export function UserMenu({ session, leagueId }: { session: Session; leagueId: string | null }) {
   const [memberships, setMemberships] = useState<Membership[] | null>(null);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const uid = session.user.id;
 
   const load = useCallback(() => {
@@ -75,6 +77,16 @@ export function UserMenu({ session, leagueId }: { session: Session; leagueId: st
             className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm hover:bg-white/5"
           >
             <UserRound size={16} color="var(--marquee-gold)" /> Profile
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              router.push("/?watchlist");
+            }}
+            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm hover:bg-white/5"
+          >
+            <Bookmark size={16} color="var(--marquee-gold)" /> My Watchlist
           </button>
           <button
             type="button"

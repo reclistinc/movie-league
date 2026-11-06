@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Film, Heart, Trophy, X } from "lucide-react";
+import { Eye, Film, Heart, Trophy, X } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Member, PlayerCard as Card } from "@/lib/types";
 import { Avatar, Poster } from "./ui";
@@ -218,6 +218,15 @@ function PlayerCardModal({
                   {decade && (
                     <div className="flex items-center gap-2">
                       <Film size={13} color="var(--reel-grey)" /> Favorite decade: <b>{decade}</b>
+                    </div>
+                  )}
+                  {L.seen_picks != null && (L.others_picks ?? 0) > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Eye size={13} color="var(--reel-grey)" /> Has seen{" "}
+                      <b>
+                        {L.seen_picks} of {L.others_picks}
+                      </b>{" "}
+                      league picks
                     </div>
                   )}
                 </div>

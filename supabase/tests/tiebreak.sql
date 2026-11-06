@@ -17,9 +17,9 @@ insert into public.league_members (league_id, user_id, display_name, avatar, joi
   (:'lid', pg_temp.u('a'), 'A', 'detective', now() - interval '3 days'),
   (:'lid', pg_temp.u('b'), 'B', 'wizard',    now() - interval '2 days'),
   (:'lid', pg_temp.u('c'), 'C', 'robot',     now() - interval '1 day');
-insert into public.rounds (id, league_id, position, theme, status) values
-  ('22222222-0000-0000-0000-000000000001', :'lid', 1, 'One', 'complete'),
-  ('22222222-0000-0000-0000-000000000002', :'lid', 2, 'Two', 'complete');
+insert into public.rounds (id, league_id, position, theme, status, submissions_opened_at) values
+  ('22222222-0000-0000-0000-000000000001', :'lid', 1, 'One', 'complete', now()),
+  ('22222222-0000-0000-0000-000000000002', :'lid', 2, 'Two', 'complete', now());
 -- picks: round 1 movies 101..104, round 2 movies 201..204 (a,b,c,d)
 insert into public.submissions (id, round_id, user_id, tmdb_id, title)
 select ('33333333-0000-0000-0000-0000000000' || r || x)::uuid, ('22222222-0000-0000-0000-00000000000' || r)::uuid,
@@ -38,12 +38,15 @@ select pg_temp.check(pg_temp.order_str(:'lid') = 'abdc', 'rule 3 (best round) sp
 
 -- Rule 6: c marks one of the others' picks Seen -> c passes d
 insert into public.watch_status (user_id, tmdb_id, status) values (pg_temp.u('c'), 101, 'seen');
+select public._snapshot_round('22222222-0000-0000-0000-000000000001'), public._snapshot_round('22222222-0000-0000-0000-000000000002');
 select pg_temp.check(pg_temp.order_str(:'lid') = 'abcd', 'rule 6 (seen) puts c ahead');
 -- marking your own pick doesn't count
 insert into public.watch_status (user_id, tmdb_id, status) values (pg_temp.u('d'), 204, 'seen');
+select public._snapshot_round('22222222-0000-0000-0000-000000000001'), public._snapshot_round('22222222-0000-0000-0000-000000000002');
 select pg_temp.check(pg_temp.order_str(:'lid') = 'abcd', 'own pick not counted');
 -- Rule 7: d level on seen, then more watchlist -> d ahead
 insert into public.watch_status (user_id, tmdb_id, status) values (pg_temp.u('d'), 102, 'seen'), (pg_temp.u('d'), 103, 'want');
+select public._snapshot_round('22222222-0000-0000-0000-000000000001'), public._snapshot_round('22222222-0000-0000-0000-000000000002');
 select pg_temp.check(pg_temp.order_str(:'lid') = 'abdc', 'rule 7 (watchlist) puts d ahead');
 
 -- Rule 5: a and b level on points (5), wins (0), best round (3), voters (1.0); a finishes last once, b never.

@@ -10,6 +10,7 @@ import { Login } from "./Login";
 import { Home } from "./Home";
 import { Join } from "./Join";
 import { League } from "./League";
+import { Watchlist } from "./Watchlist";
 import { UserMenu } from "./UserMenu";
 import { PosterWall } from "./media";
 import { TmdbAttribution } from "./ui";
@@ -18,6 +19,7 @@ import { TmdbAttribution } from "./ui";
 //   /                 -> your leagues + create
 //   /?join=CODE       -> invite / join flow
 //   /?league=ID       -> league view
+//   /?watchlist       -> your watchlist
 export function App() {
   const params = useSearchParams();
   const router = useRouter();
@@ -77,6 +79,7 @@ export function App() {
   else if (!session) body = <Login inviteCode={join} />;
   else if (join) body = <Join code={join} />;
   else if (league) body = <League leagueId={league} />;
+  else if (params.has("watchlist")) body = <Watchlist />;
   else body = <Home />;
 
   return (

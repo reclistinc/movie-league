@@ -91,6 +91,15 @@ begin
     end if;
   end loop;
   insert into public.ballots (round_id, user_id) values (p_round, p_voter) on conflict do nothing;
+
+  -- Pretend players also mark movies Seen / Watchlist (never you — your marks are yours).
+  if p_voter in (select user_id from public._demo_bots()) then
+    insert into public.watch_status (user_id, tmdb_id, status)
+    select p_voter, s.tmdb_id, case when x.r < 0.55 then 'seen' else 'want' end
+    from public.submissions s cross join lateral (select random() as r) x
+    where s.round_id = p_round and s.user_id <> p_voter and x.r < 0.8
+    on conflict (user_id, tmdb_id) do nothing;
+  end if;
 end;
 $$;
 
@@ -168,6 +177,8 @@ begin
   -- Everyone voted in rounds 1–2 (you included, randomly); two players already voted in round 3.
   perform public._demo_cast(r1, m.user_id) from public.league_members m where m.league_id = lid;
   perform public._demo_cast(r2, m.user_id) from public.league_members m where m.league_id = lid;
+  perform public._snapshot_round(r1);
+  perform public._snapshot_round(r2);
   perform public._demo_cast(r3, d.user_id) from public._demo_bots() d where d.name in ('Jordan', 'Sam');
 
   insert into public.chat_messages (league_id, user_id, body, created_at)
@@ -351,6 +362,7 @@ begin
     join (select *, row_number() over (order by random()) as k from public._demo_pool()) m on m.k = p.k;
 
     perform public._demo_cast(rid, uid) from unnest(players) uid;
+    perform public._snapshot_round(rid);
   end loop;
 
   -- Who won? (same ordering as the app's standings: points, then round wins)
