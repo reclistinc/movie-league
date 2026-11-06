@@ -136,6 +136,10 @@ select pg_temp.check(((:'st'::jsonb)->'standings'->0->>'user_id') like '%a'
 select pg_temp.check(jsonb_array_length((:'st'::jsonb)->'rounds'->1->'participant_ids') = 4, 'late joiner participates in round 2');
 
 -- ---- Deadlines -----------------------------------------------------------
+-- no repeat picks for the same player within a league (a picked Heat in round 1)
+select pg_temp.as_user('a');
+select pg_temp.expect_error(format('select public.submit_pick(%L, 949, %L)', :'r2', 'Heat'), 'already picked that movie in round 1');
+select pg_temp.as_user('d');  select public.submit_pick(:'r2', 949, 'Heat', 1995);  -- someone else's old pick is fine
 select pg_temp.as_user('d');  select public.submit_pick(:'r2', 9377, 'Ferris Bueller''s Day Off', 1986);
 select pg_temp.as_user('a');  select public.submit_pick(:'r2', 8587, 'The Lion King', 1994);
 reset role;

@@ -117,6 +117,14 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const waitingOn = round.participant_ids.length - round.submitted_ids.length;
+  // Movies you've already picked in this league (no repeats for the same player).
+  const usedIn = useMemo(() => {
+    const pos = Object.fromEntries(state.rounds.map((r) => [r.id, r.position]));
+    const m = new Map<number, number>();
+    for (const [rid, picks] of Object.entries(state.results))
+      for (const p of picks) if (p.user_id === state.me && !m.has(p.tmdb_id)) m.set(p.tmdb_id, pos[rid]);
+    return m;
+  }, [state.results, state.rounds, state.me]);
 
   useEffect(() => {
     if (query.trim().length < 2) return;
@@ -228,17 +236,33 @@ function Submit({ round, state, onChange }: { round: Round; state: LeagueState; 
           )}
           {shown.length > 0 && (
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-              {shown.map((m) => (
-                <button key={m.tmdb_id} onClick={() => { setChosen(m); setVideo(null); }} className="group flex flex-col items-center gap-1.5 text-center">
-                  <div className="transition group-hover:scale-[1.03]">
-                    <Poster movie={m} width={100} />
-                  </div>
-                  <span className="text-xs leading-tight">
-                    {m.title}{" "}
-                    {m.release_year && <span style={{ color: "var(--reel-grey)" }}>({m.release_year})</span>}
-                  </span>
-                </button>
-              ))}
+              {shown.map((m) => {
+                const used = usedIn.get(m.tmdb_id);
+                return (
+                  <button
+                    key={m.tmdb_id}
+                    disabled={used !== undefined}
+                    onClick={() => {
+                      setChosen(m);
+                      setVideo(null);
+                    }}
+                    className="group flex flex-col items-center gap-1.5 text-center disabled:cursor-not-allowed"
+                  >
+                    <div className={used !== undefined ? "opacity-35 grayscale" : "transition group-hover:scale-[1.03]"}>
+                      <Poster movie={m} width={100} />
+                    </div>
+                    <span className="text-xs leading-tight" style={used !== undefined ? { color: "var(--reel-grey)" } : undefined}>
+                      {m.title}{" "}
+                      {m.release_year && <span style={{ color: "var(--reel-grey)" }}>({m.release_year})</span>}
+                    </span>
+                    {used !== undefined && (
+                      <span className="mono text-[10px] uppercase" style={{ color: "var(--marquee-gold)" }}>
+                        You picked it in R{used}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </>
